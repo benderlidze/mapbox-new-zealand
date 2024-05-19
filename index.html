@@ -1,62 +1,155 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <title>Display a map</title>
-    <meta property="og:description" content="Initialize a map in an HTML element with MapLibre GL JS." />
-    <meta charset='utf-8'>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@4.3.1/dist/maplibre-gl.css' />
-    <script src='https://unpkg.com/maplibre-gl@4.3.1/dist/maplibre-gl.js'></script>
+    <meta charset="utf-8">
+    <title>Add a new layer to a slot</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
     <style>
         body {
             margin: 0;
             padding: 0;
         }
 
-        html,
-        body,
         #map {
-            height: 100%;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        #legend {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: white;
+            border-radius: 10px;
+            padding: 10px;
+            z-index: 1000
+        }
+
+        #filters {
+            background-color: white;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            border-radius: 20px;
+            z-index: 10;
+            padding: 10px;
+        }
+
+        .switcher-div {
+            display: flex;
+            align-items: center;
+            margin: 5px;
+        }
+
+        .switcher-div>div {
+            margin-left: 5px;
+        }
+
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 35px;
+            height: 15px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: 0.4s;
+            transition: 0.4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 11px;
+            width: 11px;
+            left: 3px;
+            bottom: 2px;
+            background-color: white;
+            -webkit-transition: 0.4s;
+            transition: 0.4s;
+        }
+
+        input:checked+.slider {
+            background-color: #2196f3;
+        }
+
+        input:focus+.slider {
+            box-shadow: 0 0 1px #2196f3;
+        }
+
+        input:checked+.slider:before {
+            -webkit-transform: translateX(18px);
+            -ms-transform: translateX(18px);
+            transform: translateX(18px);
+        }
+
+        /* Rounded sliders */
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+        #loading {
+            background-color: white;
+            position: absolute;
+            border-radius: 10px;
+            z-index: 10;
+            padding: 20px;
+            font-size: 20px;
+
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
     </style>
 </head>
 
 <body>
+    <div id="legend"></div>
     <div id="map"></div>
     <script>
 
-        // Define the map syle (OpenStreetMap raster tiles)
-        const style = {
-            "version": 8,
-            "sources": {
-                "osm": {
-                    "type": "raster",
-                    "tiles": ["https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"],
-                    "tileSize": 256,
-                    "attribution": "&copy; OpenStreetMap Contributors",
-                    "maxzoom": 19
-                }
-            },
-            "layers": [
-                {
-                    "id": "osm",
-                    "type": "raster",
-                    "source": "osm" // This must match the source key above
-                }
-            ]
-        };
+        const switchersEnableDiv = document.getElementById("legend")
 
-        // Initialise the map
-        const map = new maplibregl.Map({
+        const soilClasses = ["RFM", "RFW", "UEP", "GOA", "LOV", "LOT", "ZOH", "ZOT", "BOA", "WT", "BOM", "RTB", "LOA", "LIM", "ROT", "ROW", "BOT", "MOBL", "GOT", "BAP", "WX", "ice", "rive", "BAT", "PXM", "BFT", "town", "PIT", "BLA", "UEM", "UYT", "WF", "MOZ", "ZPT", "WS", "RST", "NXT", "ZXP", "RTT", "LOVA", "BLT", "LGT", "MOT", "PPU", "MOI", "NOA", "BOP", "BXT", "XOT", "BAM", "ZDH", "NOM", "UPS", "estu", "BLAD", "BAO", "BST", "GAP", "GRQ", "PPJX", "OMA", "PID", "NOT", "ZPH", "PJM", "BLX", "lake", "BLD", "GRT", "GSC", "PIM", "GOE", "RFT", "PJT", "PPJ", "ERT", "LPT", "BFL", "BMT", "GUFQ", "UST", "EOJC", "MIW", "RFAW", "BFA", "BMG", "PXJN", "BOC", "WO", "BMM", "BSA", "AFST", "BOH", "SIT", "EMT", "SAT", "UEY", "GAT", "ZPZ", "UPT", "GUF", "EOM", "OHM", "PPX", "PLT", "EOJ", "UYM", "LIT", "OHA", "RTM", "PJA", "PJN", "SAH", "SJT", "PXMC", "GSO", "MOBA", "BSM", "GST", "BFM", "RSM", "ERW", "PXJ", "MOM", "BMA", "PXJM", "SJQ", "RXT", "OMM", "RTBP", "GOO", "EMG", "XPT", "ROA", "ZXF", "EOT", "ZXQ", "EOC", "BFMA", "ZXH", "WGFU", "UDP", "NXM", "XNT", "OFA", "PPT", "ROM", "PLM", "quar", "BFP", "ZPP", "ZGT", "NPT", "MOL", "RFA", "WST", "PXJC", "SAM", "OFS", "BFC", "ZXU", "BLM", "GOC", "ROAW", "ATT", "RFMA", "BFAL", "NPA", "GAO", "UDM", "SAW", "MOBT", "EPT", "GRA", "WH", "BOI", "MIM", "RTBL", "PUM", "EODC", "EVT", "SJM", "BOMA", "MPT", "NXA", "BLAM", "MIT", "RTBA", "WHA", "GRO", "ZPU", "PJC", "EVM", "PXT", "EMM", "ZPOZ", "RFMQ", "PPF", "GOM", "ERO", "GOP", "RF?", "WGF", "BSP", "SJL"]
+
+        mapboxgl.accessToken = 'pk.eyJ1Ijoib3VyZmFybXMiLCJhIjoiY2x3YWRhbW9nMGRsNjJxcHFwdW81emVhNSJ9.forvlRpP1nOZekrRDqBKjQ';
+        const map = new mapboxgl.Map({
             container: 'map',
-            style: style,
+            // You can add layers to the predetermined slots within the Standard style basemap.
+            style: 'mapbox://styles/mapbox/standard',
             center: { lng: 172.3061864991388, lat: -40.9500445272423 }, //
-            zoom: 3
+            zoom: 3,
+            projection: "mercator"
         });
 
+
+        map.addControl(new mapboxgl.NavigationControl());
+
         map.on('load', () => {
-            //add vector tiles layer 
             map.addSource('wms-test-source', {
                 type: 'raster',
                 tiles: [
@@ -64,15 +157,181 @@
                 ],
                 tileSize: 256
             });
-
             map.addLayer({
                 id: 'wms-test-layer',
                 type: 'raster',
+                visibility: "visible",
                 source: 'wms-test-source',
                 paint: {}
             });
+
+
+            map.addSource('waterways', {
+                type: 'vector',
+                url: 'mapbox://ourfarms.c10kf05t'
+            });
+            map.addLayer(
+                {
+                    'id': 'waterways-data',
+                    'type': 'line',
+                    'source': 'waterways',
+                    'source-layer': 'river-flows-2nhit5',
+                    visibility: "visible",
+                    'layout': {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    'paint': {
+                        'line-color': '#ff69b4',
+                        'line-width': 1
+                    }
+                },
+            );
+
+            map.addSource('soil', {
+                type: 'vector',
+                url: 'mapbox://ourfarms.bkfvmvux'
+            });
+            map.addLayer(
+                {
+                    'id': 'soil-data',
+                    'type': 'fill',
+                    'source': 'soil',
+                    visibility: "visible",
+                    'source-layer': 'mfe-fundamental-soil-layers-n-9901jl',
+                    'layout': {},
+                    'paint': {
+                        'fill-color': 'blue',
+                        'fill-opacity': 0.5
+                    }
+                },
+            );
+
+            map.addSource('landuse', {
+                type: 'vector',
+                url: 'mapbox://ourfarms.5vccm0l8'
+            });
+            map.addLayer(
+                {
+                    'id': 'landuse-data',
+                    'type': 'fill',
+                    'source': 'landuse',
+                    visibility: "visible",
+                    'source-layer': 'FILTERED-nzlri-land-use-capab-70nw7k',
+                    'layout': {},
+                    'paint': {
+                        'fill-color': 'red',
+                        'fill-opacity': 0.5
+                    }
+                },
+            );
+
+            map.addSource('lowslope', {
+                type: 'vector',
+                url: 'mapbox://ourfarms.3jcqeu12'
+            });
+            map.addLayer(
+                {
+                    'id': 'lowslope-data',
+                    'type': 'fill',
+                    'source': 'lowslope',
+                    visibility: "visible",
+                    'source-layer': 'REDUCED-stock-exclusion-low-s-dos2ed',
+                    'layout': {},
+                    'paint': {
+                        'fill-color': 'red',
+                        'fill-opacity': 0.5
+                    }
+                },
+            );
         });
+
+        switchersEnableDiv.appendChild(buildSwitcher("Land Use Capability", checked => {
+            const display = checked ? "visible" : "none"
+            map.setLayoutProperty('landuse-data', 'visibility', display);
+        }, false, true))
+
+        switchersEnableDiv.appendChild(buildSwitcher("Soils", checked => {
+            const display = checked ? "visible" : "none"
+            map.setLayoutProperty('soil-data', 'visibility', display);
+        }, false, true))
+
+        switchersEnableDiv.appendChild(buildSwitcher("Waterways", checked => {
+            const display = checked ? "visible" : "none"
+            map.setLayoutProperty('waterways-data', 'visibility', display);
+        }, false, true))
+
+        switchersEnableDiv.appendChild(buildSwitcher("Low Slope", checked => {
+            const display = checked ? "visible" : "none"
+            map.setLayoutProperty('waterways-data', 'visibility', display);
+        }, false, true))
+
+
+        function buildCheckBox({ initState = "checked", name, callback, labelCallback, plusShow = true, plusCallback, tooltip }) {
+            const div = document.createElement('div');
+            div.className = 'check-item'
+            const checkbox = document.createElement('input');
+            checkbox.checked = initState
+            checkbox.dataset.circuit = name
+            checkbox.type = "checkbox";
+            checkbox.name = "name";
+            checkbox.value = "value";
+            checkbox.id = "";
+            checkbox.addEventListener("change", () => {
+                if (typeof callback === "function") callback(checkbox.checked)
+            })
+            const label = document.createElement('span')
+            label.htmlFor = "";
+            label.className = 'tooltip-container cooltipz--top cooltipz--static'
+            label.appendChild(document.createTextNode(name));
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            return div
+        }
+
+        function buildSwitcher(labelText, action, colorCircle, checked = true) {
+
+            const div = document.createElement("div")
+            div.className = "switcher-div"
+
+            const label = document.createElement("label")
+            label.className = "switch"
+
+            const checkbox = document.createElement("input")
+            checkbox.type = "checkbox"
+            checkbox.checked = checked
+            checkbox.addEventListener("input", () => {
+                if (typeof action === "function") {
+                    action(checkbox.checked)
+                }
+            })
+
+            const color = document.createElement("div")
+            color.style.width = "10px"
+            color.style.height = "10px"
+            color.style.backgroundColor = colorCircle
+            color.style.borderRadius = "10px"
+            color.style.border = "1px solid #2196f3"
+
+
+            const span = document.createElement("span")
+            span.className = "slider round"
+
+            const text = document.createElement("div")
+            text.innerText = labelText
+
+            label.appendChild(checkbox)
+            label.appendChild(span)
+
+            div.appendChild(label)
+            if (colorCircle) div.appendChild(color)
+            div.appendChild(text)
+
+            return div
+        }
+
     </script>
+
 </body>
 
 </html>
