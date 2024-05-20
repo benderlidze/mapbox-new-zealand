@@ -366,7 +366,7 @@
             })
         });
 
-        switchersEnableDiv.appendChild(buildSwitcher("Base", checked => {
+        switchersEnableDiv.appendChild(buildSwitcher("Select your property", checked => {
             const display = checked ? "visible" : "none"
             map.setLayoutProperty('base-data', 'visibility', display);
         }, false, true))
