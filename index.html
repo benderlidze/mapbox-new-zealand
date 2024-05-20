@@ -142,8 +142,8 @@
             // You can add layers to the predetermined slots within the Standard style basemap.
             // style: 'mapbox://styles/mapbox/standard',
             style: 'mapbox://styles/mapbox/satellite-v9',
-            center: { lng: 174.9913008808635, lat: -37.649882608695 }, //
-            zoom: 11,
+            center: { lng: 174.95943864902665, lat: -37.70716520232802 }, //
+            zoom: 9,
             projection: "mercator"
         });
         map.addControl(new mapboxgl.NavigationControl());
@@ -166,7 +166,7 @@
 
             map.addSource('base', {
                 type: 'vector',
-                url: 'mapbox://ourfarms.dxzdgezt'
+                url: 'mapbox://ourfarms.b895136s'
             });
             map.addLayer(
                 {
@@ -174,7 +174,7 @@
                     'type': 'fill',
                     'source': 'base',
                     'visibility': "visible",
-                    'source-layer': 'lds-nz-property-titles-SHP-59iqno',
+                    'source-layer': 'nzpropertytitles',
                     'layout': {},
                     'paint': {
                         'fill-color': 'gray',
@@ -188,7 +188,7 @@
                     'type': 'line',
                     'source': 'base',
                     'visibility': "visible",
-                    'source-layer': 'lds-nz-property-titles-SHP-59iqno',
+                    'source-layer': 'nzpropertytitles',
                     'layout': {},
                     'paint': {
                         'line-color': 'black',
