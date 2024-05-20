@@ -431,10 +431,7 @@
                     return `${p}`
                 }).join("</br>")
             })
-
-
             loadPropertyControls()
-
         });
 
         switchersEnableDiv.appendChild(buildSwitcher("Select your property", checked => {
@@ -469,7 +466,7 @@
             saveButton.innerText = "Save"
             saveButton.addEventListener("click", () => {
 
-                if (selectedBasePolygons.length > 0) {
+                if (selectedBasePolygons) {
                     localStorage.setItem('appPolygonsData', JSON.stringify({
                         selectedBasePolygons,
                         bbox: ""
@@ -483,8 +480,6 @@
                 const appPolygonsData = localStorage.getItem('appPolygonsData')
                 if (appPolygonsData) {
                     const polygonsArray = JSON.parse(appPolygonsData)
-
-
                     console.log('polygonsArray', polygonsArray);
 
                     if (polygonsArray.selectedBasePolygons) {
@@ -499,12 +494,8 @@
                     }
                 }
             })
-
-
             propertyControlsDiv.appendChild(saveButton)
             propertyControlsDiv.appendChild(loadButton)
-
-
         }
 
         function buildCheckBox({ initState = "checked", name, callback, labelCallback, plusShow = true, plusCallback, tooltip }) {
