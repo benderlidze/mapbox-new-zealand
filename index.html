@@ -133,38 +133,69 @@
     <script>
 
         const switchersEnableDiv = document.getElementById("legend")
-
         const soilClasses = ["RFM", "RFW", "UEP", "GOA", "LOV", "LOT", "ZOH", "ZOT", "BOA", "WT", "BOM", "RTB", "LOA", "LIM", "ROT", "ROW", "BOT", "MOBL", "GOT", "BAP", "WX", "ice", "rive", "BAT", "PXM", "BFT", "town", "PIT", "BLA", "UEM", "UYT", "WF", "MOZ", "ZPT", "WS", "RST", "NXT", "ZXP", "RTT", "LOVA", "BLT", "LGT", "MOT", "PPU", "MOI", "NOA", "BOP", "BXT", "XOT", "BAM", "ZDH", "NOM", "UPS", "estu", "BLAD", "BAO", "BST", "GAP", "GRQ", "PPJX", "OMA", "PID", "NOT", "ZPH", "PJM", "BLX", "lake", "BLD", "GRT", "GSC", "PIM", "GOE", "RFT", "PJT", "PPJ", "ERT", "LPT", "BFL", "BMT", "GUFQ", "UST", "EOJC", "MIW", "RFAW", "BFA", "BMG", "PXJN", "BOC", "WO", "BMM", "BSA", "AFST", "BOH", "SIT", "EMT", "SAT", "UEY", "GAT", "ZPZ", "UPT", "GUF", "EOM", "OHM", "PPX", "PLT", "EOJ", "UYM", "LIT", "OHA", "RTM", "PJA", "PJN", "SAH", "SJT", "PXMC", "GSO", "MOBA", "BSM", "GST", "BFM", "RSM", "ERW", "PXJ", "MOM", "BMA", "PXJM", "SJQ", "RXT", "OMM", "RTBP", "GOO", "EMG", "XPT", "ROA", "ZXF", "EOT", "ZXQ", "EOC", "BFMA", "ZXH", "WGFU", "UDP", "NXM", "XNT", "OFA", "PPT", "ROM", "PLM", "quar", "BFP", "ZPP", "ZGT", "NPT", "MOL", "RFA", "WST", "PXJC", "SAM", "OFS", "BFC", "ZXU", "BLM", "GOC", "ROAW", "ATT", "RFMA", "BFAL", "NPA", "GAO", "UDM", "SAW", "MOBT", "EPT", "GRA", "WH", "BOI", "MIM", "RTBL", "PUM", "EODC", "EVT", "SJM", "BOMA", "MPT", "NXA", "BLAM", "MIT", "RTBA", "WHA", "GRO", "ZPU", "PJC", "EVM", "PXT", "EMM", "ZPOZ", "RFMQ", "PPF", "GOM", "ERO", "GOP", "RF?", "WGF", "BSP", "SJL"]
+        const selectedBasePolygons = []
 
         mapboxgl.accessToken = 'pk.eyJ1Ijoib3VyZmFybXMiLCJhIjoiY2x3YWRhbW9nMGRsNjJxcHFwdW81emVhNSJ9.forvlRpP1nOZekrRDqBKjQ';
         const map = new mapboxgl.Map({
             container: 'map',
             // You can add layers to the predetermined slots within the Standard style basemap.
-            style: 'mapbox://styles/mapbox/standard',
-            center: { lng: 172.3061864991388, lat: -40.9500445272423 }, //
-            zoom: 3,
+            // style: 'mapbox://styles/mapbox/standard',
+            style: 'mapbox://styles/mapbox/satellite-v9',
+            center: { lng: 174.9913008808635, lat: -37.649882608695 }, //
+            zoom: 11,
             projection: "mercator"
         });
-
-
         map.addControl(new mapboxgl.NavigationControl());
 
         map.on('load', () => {
-            map.addSource('wms-test-source', {
-                type: 'raster',
-                tiles: [
-                    'https://tiles-cdn.koordinates.com/services;key=1fe89c918dad495ca373b35a1d9e12a4/tiles/v4/layer=50804.404152,color=003399/{z}/{x}/{y}.png'
-                ],
-                tileSize: 256
-            });
-            map.addLayer({
-                id: 'wms-test-layer',
-                type: 'raster',
-                visibility: "visible",
-                source: 'wms-test-source',
-                paint: {}
-            });
+            // map.addSource('wms-test-source', {
+            //     type: 'raster',
+            //     tiles: [
+            //         'https://tiles-cdn.koordinates.com/services;key=1fe89c918dad495ca373b35a1d9e12a4/tiles/v4/layer=50804.404152,color=003399/{z}/{x}/{y}.png'
+            //     ],
+            //     tileSize: 256
+            // });
+            // map.addLayer({
+            //     id: 'wms-test-layer',
+            //     type: 'raster',
+            //     'visibility': "visible",
+            //     source: 'wms-test-source',
+            //     paint: {}
+            // });
 
+            map.addSource('base', {
+                type: 'vector',
+                url: 'mapbox://ourfarms.dxzdgezt'
+            });
+            map.addLayer(
+                {
+                    'id': 'base-data',
+                    'type': 'fill',
+                    'source': 'base',
+                    'visibility': "visible",
+                    'source-layer': 'lds-nz-property-titles-SHP-59iqno',
+                    'layout': {},
+                    'paint': {
+                        'fill-color': 'gray',
+                        'fill-opacity': 0.5,
+                    }
+                },
+            );
+            map.addLayer(
+                {
+                    'id': 'base-data-outline',
+                    'type': 'line',
+                    'source': 'base',
+                    'visibility': "visible",
+                    'source-layer': 'lds-nz-property-titles-SHP-59iqno',
+                    'layout': {},
+                    'paint': {
+                        'line-color': 'black',
+                        'line-width': 1
+                    }
+                },
+            );
 
             map.addSource('waterways', {
                 type: 'vector',
@@ -176,52 +207,69 @@
                     'type': 'line',
                     'source': 'waterways',
                     'source-layer': 'river-flows-2nhit5',
-                    visibility: "visible",
                     'layout': {
+                        'visibility': "none",
                         'line-join': 'round',
                         'line-cap': 'round'
                     },
                     'paint': {
-                        'line-color': '#ff69b4',
-                        'line-width': 1
+                        'line-color': 'blue',
+                        'line-width': 2
                     }
                 },
             );
 
-            map.addSource('soil', {
-                type: 'vector',
-                url: 'mapbox://ourfarms.bkfvmvux'
-            });
-            map.addLayer(
-                {
-                    'id': 'soil-data',
-                    'type': 'fill',
-                    'source': 'soil',
-                    visibility: "visible",
-                    'source-layer': 'mfe-fundamental-soil-layers-n-9901jl',
-                    'layout': {},
-                    'paint': {
-                        'fill-color': 'blue',
-                        'fill-opacity': 0.5
-                    }
-                },
-            );
+            // map.addSource('soil', {
+            //     type: 'vector',
+            //     url: 'mapbox://ourfarms.bkfvmvux'
+            // });
+            // map.addLayer(
+            //     {
+            //         'id': 'soil-data',
+            //         'type': 'fill',
+            //         'source': 'soil',
+            //         'layout': {
+            //             'visibility': "none",
+            //         },
+            //         'source-layer': 'mfe-fundamental-soil-layers-n-9901jl',
+            //         'paint': {
+            //             'fill-color': 'blue',
+            //             'fill-opacity': 0.5
+            //         }
+            //     },
+            // );
 
             map.addSource('landuse', {
                 type: 'vector',
-                url: 'mapbox://ourfarms.5vccm0l8'
+                url: 'mapbox://ourfarms.1tk8wn40'
             });
             map.addLayer(
                 {
                     'id': 'landuse-data',
+                    'type': 'line',
+                    'source': 'landuse',
+                    'source-layer': 'nzlri-land-use-capability-202-0csqzx',
+                    'layout': {
+                        'visibility': "none",
+                    },
+                    'paint': {
+                        'line-color': 'white',
+                        'line-width': 1
+                    }
+                },
+            );
+            map.addLayer(
+                {
+                    'id': 'landuse-data-fill',
                     'type': 'fill',
                     'source': 'landuse',
-                    visibility: "visible",
-                    'source-layer': 'FILTERED-nzlri-land-use-capab-70nw7k',
-                    'layout': {},
+                    'source-layer': 'nzlri-land-use-capability-202-0csqzx',
+                    'layout': {
+                        'visibility': "none",
+                    },
                     'paint': {
-                        'fill-color': 'red',
-                        'fill-opacity': 0.5
+                        'fill-color': 'yellow',
+                        'fill-opacity': 0
                     }
                 },
             );
@@ -235,36 +283,97 @@
                     'id': 'lowslope-data',
                     'type': 'fill',
                     'source': 'lowslope',
-                    visibility: "visible",
                     'source-layer': 'REDUCED-stock-exclusion-low-s-dos2ed',
-                    'layout': {},
+                    'layout': {
+                        'visibility': "none",
+                    },
                     'paint': {
                         'fill-color': 'red',
                         'fill-opacity': 0.5
                     }
                 },
             );
+
+            map.on('click', 'landuse-data-fill', (e) => {
+                const features = map.queryRenderedFeatures(e.point, { layers: ['landuse-data-fill'] });
+                if (!features.length) {
+                    return;
+                }
+
+                const feature = features[0];
+                const polygonId = feature.properties.polyid
+                const info = feature.properties.nzcu_descr
+                const popup = new mapboxgl.Popup({
+                    offset: [0, -15],
+                })
+                    .setLngLat(e.lngLat)
+                    .setHTML(`<p>${info}</p>`)
+                    .addTo(map);
+
+                popup.once('close', function () {
+                    map.setPaintProperty('landuse-data-fill', 'fill-opacity', 0);
+                });
+
+                map.setPaintProperty('landuse-data-fill', 'fill-opacity', [
+                    'case',
+                    ['==', ['get', 'polyid'], polygonId],
+                    0.5,
+                    0
+                ]);
+            });
+
+            map.on("click", "base-data", e => {
+                const features = map.queryRenderedFeatures(e.point, { layers: ['base-data'] });
+                if (!features.length) {
+                    return;
+                }
+
+                const feature = features[0];
+                console.log('feature', feature);
+                const polygonId = feature.properties.id
+
+                if (selectedBasePolygons.includes(polygonId)) {
+                    selectedBasePolygons.splice(selectedBasePolygons.indexOf(polygonId), 1)
+                } else {
+                    selectedBasePolygons.push(polygonId)
+                }
+
+                map.setPaintProperty('base-data', 'fill-opacity', [
+                    'case',
+                    ['in', ['get', 'id'], ['literal', selectedBasePolygons]],
+                    0,
+                    0.5
+                ]);
+
+
+            })
         });
+
+        switchersEnableDiv.appendChild(buildSwitcher("Base", checked => {
+            const display = checked ? "visible" : "none"
+            map.setLayoutProperty('base-data', 'visibility', display);
+        }, false, true))
 
         switchersEnableDiv.appendChild(buildSwitcher("Land Use Capability", checked => {
             const display = checked ? "visible" : "none"
             map.setLayoutProperty('landuse-data', 'visibility', display);
-        }, false, true))
+            map.setLayoutProperty('landuse-data-fill', 'visibility', display);
+        }, false, false))
 
-        switchersEnableDiv.appendChild(buildSwitcher("Soils", checked => {
-            const display = checked ? "visible" : "none"
-            map.setLayoutProperty('soil-data', 'visibility', display);
-        }, false, true))
+        // switchersEnableDiv.appendChild(buildSwitcher("Soils", checked => {
+        //     const display = checked ? "visible" : "none"
+        //     map.setLayoutProperty('soil-data', 'visibility', display);
+        // }, false, false))
 
         switchersEnableDiv.appendChild(buildSwitcher("Waterways", checked => {
             const display = checked ? "visible" : "none"
             map.setLayoutProperty('waterways-data', 'visibility', display);
-        }, false, true))
+        }, false, false))
 
         switchersEnableDiv.appendChild(buildSwitcher("Low Slope", checked => {
             const display = checked ? "visible" : "none"
             map.setLayoutProperty('lowslope-data', 'visibility', display);
-        }, false, true))
+        }, false, false))
 
 
         function buildCheckBox({ initState = "checked", name, callback, labelCallback, plusShow = true, plusCallback, tooltip }) {
