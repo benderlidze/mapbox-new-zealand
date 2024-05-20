@@ -20,14 +20,27 @@
             width: 100%;
         }
 
-        #legend {
+        #panel {
             position: absolute;
             top: 10px;
             left: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 5px
+        }
+
+        #legend {
             background-color: white;
             border-radius: 10px;
             padding: 10px;
-            z-index: 1000
+
+        }
+
+        #property {
+            background-color: white;
+            border-radius: 10px;
+            padding: 10px;
         }
 
         #filters {
@@ -124,6 +137,12 @@
             left: 50%;
             transform: translate(-50%, -50%);
         }
+
+        #property-controls {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+        }
     </style>
 </head>
 
@@ -135,13 +154,59 @@
         href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css"
         type="text/css">
 
-    <div id="legend"></div>
+    <div id="panel">
+        <div id="legend"></div>
+        <div id="property">
+            <div id="list"></div>
+            <div id="property-controls"></div>
+        </div>
+    </div>
+
     <div id="map"></div>
     <script>
 
+        const propertyListDiv = document.getElementById("list")
+        const propertyControlsDiv = document.getElementById("property-controls")
+
         const switchersEnableDiv = document.getElementById("legend")
         const soilClasses = ["RFM", "RFW", "UEP", "GOA", "LOV", "LOT", "ZOH", "ZOT", "BOA", "WT", "BOM", "RTB", "LOA", "LIM", "ROT", "ROW", "BOT", "MOBL", "GOT", "BAP", "WX", "ice", "rive", "BAT", "PXM", "BFT", "town", "PIT", "BLA", "UEM", "UYT", "WF", "MOZ", "ZPT", "WS", "RST", "NXT", "ZXP", "RTT", "LOVA", "BLT", "LGT", "MOT", "PPU", "MOI", "NOA", "BOP", "BXT", "XOT", "BAM", "ZDH", "NOM", "UPS", "estu", "BLAD", "BAO", "BST", "GAP", "GRQ", "PPJX", "OMA", "PID", "NOT", "ZPH", "PJM", "BLX", "lake", "BLD", "GRT", "GSC", "PIM", "GOE", "RFT", "PJT", "PPJ", "ERT", "LPT", "BFL", "BMT", "GUFQ", "UST", "EOJC", "MIW", "RFAW", "BFA", "BMG", "PXJN", "BOC", "WO", "BMM", "BSA", "AFST", "BOH", "SIT", "EMT", "SAT", "UEY", "GAT", "ZPZ", "UPT", "GUF", "EOM", "OHM", "PPX", "PLT", "EOJ", "UYM", "LIT", "OHA", "RTM", "PJA", "PJN", "SAH", "SJT", "PXMC", "GSO", "MOBA", "BSM", "GST", "BFM", "RSM", "ERW", "PXJ", "MOM", "BMA", "PXJM", "SJQ", "RXT", "OMM", "RTBP", "GOO", "EMG", "XPT", "ROA", "ZXF", "EOT", "ZXQ", "EOC", "BFMA", "ZXH", "WGFU", "UDP", "NXM", "XNT", "OFA", "PPT", "ROM", "PLM", "quar", "BFP", "ZPP", "ZGT", "NPT", "MOL", "RFA", "WST", "PXJC", "SAM", "OFS", "BFC", "ZXU", "BLM", "GOC", "ROAW", "ATT", "RFMA", "BFAL", "NPA", "GAO", "UDM", "SAW", "MOBT", "EPT", "GRA", "WH", "BOI", "MIM", "RTBL", "PUM", "EODC", "EVT", "SJM", "BOMA", "MPT", "NXA", "BLAM", "MIT", "RTBA", "WHA", "GRO", "ZPU", "PJC", "EVM", "PXT", "EMM", "ZPOZ", "RFMQ", "PPF", "GOM", "ERO", "GOP", "RF?", "WGF", "BSP", "SJL"]
-        const selectedBasePolygons = []
+
+
+        function createObservableArray(callback) {
+            // Handler for the Proxy
+            const handler = {
+                // Intercepting the 'set' operation
+                set(target, property, value, receiver) {
+                    let result = Reflect.set(target, property, value, receiver);
+                    // Trigger the callback
+                    if (property === 'length' || !isNaN(property)) {
+                        callback(target);
+                    }
+                    return result;
+                },
+                // Intercepting the 'deleteProperty' operation
+                deleteProperty(target, property) {
+                    let result = Reflect.deleteProperty(target, property);
+                    // Trigger the callback
+                    callback(target);
+                    return result;
+                },
+            };
+
+            // Creating a Proxy around an empty array
+            return new Proxy([], handler);
+        }
+
+        const callback = (target, property, value) => {
+            console.log(`Array updated: target = ${target}, property = ${property}, value = ${value}`);
+            propertyListDiv.innerHTML = target.map(p => {
+                return `${p}`
+            }).join("</br>");
+        };
+        const selectedBasePolygons = createObservableArray(callback);
+
+
+
 
         mapboxgl.accessToken = 'pk.eyJ1Ijoib3VyZmFybXMiLCJhIjoiY2x3YWRhbW9nMGRsNjJxcHFwdW81emVhNSJ9.forvlRpP1nOZekrRDqBKjQ';
         const map = new mapboxgl.Map({
@@ -362,8 +427,14 @@
                     0.5
                 ]);
 
-
+                propertyListDiv.innerHTML = selectedBasePolygons.map(p => {
+                    return `${p}`
+                }).join("</br>")
             })
+
+
+            loadPropertyControls()
+
         });
 
         switchersEnableDiv.appendChild(buildSwitcher("Select your property", checked => {
@@ -392,6 +463,49 @@
             map.setLayoutProperty('lowslope-data', 'visibility', display);
         }, false, false))
 
+        function loadPropertyControls() {
+
+            const saveButton = document.createElement("button")
+            saveButton.innerText = "Save"
+            saveButton.addEventListener("click", () => {
+
+                if (selectedBasePolygons.length > 0) {
+                    localStorage.setItem('appPolygonsData', JSON.stringify({
+                        selectedBasePolygons,
+                        bbox: ""
+                    }))
+                }
+            })
+
+            const loadButton = document.createElement("button")
+            loadButton.innerText = "Load"
+            loadButton.addEventListener("click", () => {
+                const appPolygonsData = localStorage.getItem('appPolygonsData')
+                if (appPolygonsData) {
+                    const polygonsArray = JSON.parse(appPolygonsData)
+
+
+                    console.log('polygonsArray', polygonsArray);
+
+                    if (polygonsArray.selectedBasePolygons) {
+                        selectedBasePolygons.length = 0
+                        selectedBasePolygons.push(...polygonsArray.selectedBasePolygons)
+                        map.setPaintProperty('base-data', 'fill-opacity', [
+                            'case',
+                            ['in', ['get', 'id'], ['literal', selectedBasePolygons]],
+                            0,
+                            0.5
+                        ]);
+                    }
+                }
+            })
+
+
+            propertyControlsDiv.appendChild(saveButton)
+            propertyControlsDiv.appendChild(loadButton)
+
+
+        }
 
         function buildCheckBox({ initState = "checked", name, callback, labelCallback, plusShow = true, plusCallback, tooltip }) {
             const div = document.createElement('div');
@@ -438,7 +552,6 @@
             color.style.backgroundColor = colorCircle
             color.style.borderRadius = "10px"
             color.style.border = "1px solid #2196f3"
-
 
             const span = document.createElement("span")
             span.className = "slider round"
