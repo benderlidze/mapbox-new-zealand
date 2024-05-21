@@ -171,42 +171,10 @@
         const switchersEnableDiv = document.getElementById("legend")
         const soilClasses = ["RFM", "RFW", "UEP", "GOA", "LOV", "LOT", "ZOH", "ZOT", "BOA", "WT", "BOM", "RTB", "LOA", "LIM", "ROT", "ROW", "BOT", "MOBL", "GOT", "BAP", "WX", "ice", "rive", "BAT", "PXM", "BFT", "town", "PIT", "BLA", "UEM", "UYT", "WF", "MOZ", "ZPT", "WS", "RST", "NXT", "ZXP", "RTT", "LOVA", "BLT", "LGT", "MOT", "PPU", "MOI", "NOA", "BOP", "BXT", "XOT", "BAM", "ZDH", "NOM", "UPS", "estu", "BLAD", "BAO", "BST", "GAP", "GRQ", "PPJX", "OMA", "PID", "NOT", "ZPH", "PJM", "BLX", "lake", "BLD", "GRT", "GSC", "PIM", "GOE", "RFT", "PJT", "PPJ", "ERT", "LPT", "BFL", "BMT", "GUFQ", "UST", "EOJC", "MIW", "RFAW", "BFA", "BMG", "PXJN", "BOC", "WO", "BMM", "BSA", "AFST", "BOH", "SIT", "EMT", "SAT", "UEY", "GAT", "ZPZ", "UPT", "GUF", "EOM", "OHM", "PPX", "PLT", "EOJ", "UYM", "LIT", "OHA", "RTM", "PJA", "PJN", "SAH", "SJT", "PXMC", "GSO", "MOBA", "BSM", "GST", "BFM", "RSM", "ERW", "PXJ", "MOM", "BMA", "PXJM", "SJQ", "RXT", "OMM", "RTBP", "GOO", "EMG", "XPT", "ROA", "ZXF", "EOT", "ZXQ", "EOC", "BFMA", "ZXH", "WGFU", "UDP", "NXM", "XNT", "OFA", "PPT", "ROM", "PLM", "quar", "BFP", "ZPP", "ZGT", "NPT", "MOL", "RFA", "WST", "PXJC", "SAM", "OFS", "BFC", "ZXU", "BLM", "GOC", "ROAW", "ATT", "RFMA", "BFAL", "NPA", "GAO", "UDM", "SAW", "MOBT", "EPT", "GRA", "WH", "BOI", "MIM", "RTBL", "PUM", "EODC", "EVT", "SJM", "BOMA", "MPT", "NXA", "BLAM", "MIT", "RTBA", "WHA", "GRO", "ZPU", "PJC", "EVM", "PXT", "EMM", "ZPOZ", "RFMQ", "PPF", "GOM", "ERO", "GOP", "RF?", "WGF", "BSP", "SJL"]
 
-
-        function createObservableArray(callback) {
-            // Handler for the Proxy
-            const handler = {
-                // Intercepting the 'set' operation
-                set(target, property, value, receiver) {
-                    let result = Reflect.set(target, property, value, receiver);
-                    // Trigger the callback
-                    if (property === 'length' || !isNaN(property)) {
-                        callback(target);
-                    }
-                    return result;
-                },
-                // Intercepting the 'deleteProperty' operation
-                deleteProperty(target, property) {
-                    let result = Reflect.deleteProperty(target, property);
-                    // Trigger the callback
-                    callback(target);
-                    return result;
-                },
-            };
-
-            // Creating a Proxy around an empty array
-            return new Proxy([], handler);
-        }
-
-        const callback = (target, property, value) => {
-            console.log(`Array updated: target = ${target}, property = ${property}, value = ${value}`);
-            propertyListDiv.innerHTML = target.map(p => {
-                return `${p}`
-            }).join("</br>");
-        };
         const selectedBasePolygons = createObservableArray(callback);
+        const landUseColors = createObservableArray(() => {
 
-
-
+        });
 
         mapboxgl.accessToken = 'pk.eyJ1Ijoib3VyZmFybXMiLCJhIjoiY2x3YWRhbW9nMGRsNjJxcHFwdW81emVhNSJ9.forvlRpP1nOZekrRDqBKjQ';
         const map = new mapboxgl.Map({
@@ -385,23 +353,52 @@
                 const feature = features[0];
                 const polygonId = feature.properties.polyid
                 const info = feature.properties.nzcu_descr
+
+                updateLandUseColorsLayer(polygonId)
+
+                const soilClasses = [
+                    { id: 1, name: "steep country", color: "red" },
+                    { id: 2, name: "medium to steep country", color: "orange" },
+                    { id: 3, name: "cultivable rolling country", color: "purple" },
+                    { id: 4, name: "River flats", color: "blue" },
+                ]
+
+                const dropDown = document.createElement("select")
+                dropDown.innerHTML = `<option  selected disabled  value="">Select option</option>`
+                    + soilClasses.map(item => {
+                        return `<option value="${item.color}">${item.name}</option>`
+                    }).join("")
+
+                dropDown.addEventListener("change", (e) => {
+                    const selectedValue = e.target.value
+
+                    const polygon = landUseColors.find(item => item.id === polygonId)
+                    if (polygon) {
+                        polygon.color = selectedValue
+                    } else {
+                        landUseColors.push({
+                            id: polygonId,
+                            color: selectedValue,
+                        })
+                    }
+
+                    updateLandUseColorsLayer()
+                })
+
+                const contentDiv = document.createElement("div")
+                contentDiv.appendChild(document.createTextNode(info))
+                contentDiv.appendChild(dropDown)
+
                 const popup = new mapboxgl.Popup({
                     offset: [0, -15],
                 })
                     .setLngLat(e.lngLat)
-                    .setHTML(`<p>${info}</p>`)
+                    .setDOMContent(contentDiv)
                     .addTo(map);
 
                 popup.once('close', function () {
-                    map.setPaintProperty('landuse-data-fill', 'fill-opacity', 0);
+                    updateLandUseColorsLayer()
                 });
-
-                map.setPaintProperty('landuse-data-fill', 'fill-opacity', [
-                    'case',
-                    ['==', ['get', 'polyid'], polygonId],
-                    0.5,
-                    0
-                ]);
             });
 
             map.on("click", "base-data", e => {
@@ -459,6 +456,43 @@
             const display = checked ? "visible" : "none"
             map.setLayoutProperty('lowslope-data', 'visibility', display);
         }, false, false))
+
+        function updateLandUseColorsLayer(selectedId) {
+
+            map.setPaintProperty('landuse-data-fill', 'fill-opacity', 0);
+
+            const colors = landUseColors.map(item => {
+                return [item.id, item.color]
+            })
+
+            const opacity = landUseColors.map(item => {
+                return [item.id, 0.5]
+            })
+
+            //hightligh selected polygon
+            if (selectedId && !landUseColors.find(item => item.id === selectedId)) {
+                opacity.push([selectedId, 0.5])
+            }
+
+            if (colors.length > 0) {
+                map.setPaintProperty('landuse-data-fill', 'fill-color', [
+                    'match',
+                    ['get', 'polyid'],
+                    ...colors.flat(),
+                    'yellow'
+                ]);
+            }
+
+            if (opacity.length > 0) {
+                map.setPaintProperty('landuse-data-fill', 'fill-opacity', [
+                    'match',
+                    ['get', 'polyid'],
+                    ...opacity.flat(),
+                    0
+                ]);
+            }
+
+        }
 
         function loadPropertyControls() {
 
@@ -559,6 +593,38 @@
 
             return div
         }
+
+
+        function createObservableArray(callback) {
+            // Handler for the Proxy
+            const handler = {
+                // Intercepting the 'set' operation
+                set(target, property, value, receiver) {
+                    let result = Reflect.set(target, property, value, receiver);
+                    // Trigger the callback
+                    if (property === 'length' || !isNaN(property)) {
+                        callback(target);
+                    }
+                    return result;
+                },
+                // Intercepting the 'deleteProperty' operation
+                deleteProperty(target, property) {
+                    let result = Reflect.deleteProperty(target, property);
+                    // Trigger the callback
+                    callback(target);
+                    return result;
+                },
+            };
+            // Creating a Proxy around an empty array
+            return new Proxy([], handler);
+        }
+
+        function callback(target, property, value) {
+            console.log(`Array updated: target = ${target}, property = ${property}, value = ${value}`);
+            propertyListDiv.innerHTML = target.map(p => {
+                return `${p}`
+            }).join("</br>");
+        };
 
     </script>
 
