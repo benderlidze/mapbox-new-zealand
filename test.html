@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Mapbox Free Draw Mode Example</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Mapbox GL JS CSS -->
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.9.2/mapbox-gl.css' rel='stylesheet' />
+    <!-- Mapbox GL JS JavaScript -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.9.2/mapbox-gl.js'></script>
+    <!-- Mapbox Draw CSS -->
+    <link href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.3.0/mapbox-gl-draw.css'
+        rel='stylesheet' />
+    <!-- Mapbox Draw JavaScript -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.3.0/mapbox-gl-draw.js'></script>
+</head>
+
+<body>
+    <div id='map' style='width: 100%; height: 100vh;'></div>
+    <script>
+        // Mapbox access token
+        mapboxgl.accessToken = 'pk.eyJ1Ijoib3VyZmFybXMiLCJhIjoiY2x3YWRhbW9nMGRsNjJxcHFwdW81emVhNSJ9.forvlRpP1nOZekrRDqBKjQ';
+
+        // Mapbox map options
+        var mapOptions = {
+            container: 'map', // container id
+            style: 'mapbox://styles/mapbox/streets-v11', // stylesheet location
+            center: [0, 0], // starting position [lng, lat]
+            zoom: 10 // starting zoom
+        };
+
+        // Create a Mapbox GL JS map
+        var map = new mapboxgl.Map(mapOptions);
+
+        // Draw options
+        var drawOptions = {
+            displayControlsDefault: false,
+            controls: {
+                polygon: true,
+                point: true,
+                trash: true
+            },
+            modes: Object.assign({
+                draw_circle: MapboxDraw.modes.draw_circle,
+                draw_rectangle: MapboxDraw.modes.draw_rectangle
+            }, MapboxDraw.modes),
+            defaultMode: 'draw_polygon'
+        };
+
+        // Create a Draw control with specified options
+        var draw = new MapboxDraw(drawOptions);
+        // Add the Draw control to your map
+        map.addControl(draw);
+    </script>
+</body>
+
+</html>
