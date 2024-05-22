@@ -12,6 +12,8 @@
     <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css'
         type='text/css' />
 
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
     <style>
         body {
             margin: 0;
@@ -148,6 +150,28 @@
             flex-direction: row;
             gap: 10px;
         }
+
+        #actions {
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            border-radius: 10px;
+            padding: 10px;
+            gap: 10px
+        }
+
+        #info {
+            position: absolute;
+            background-color: white;
+            border-radius: 10px;
+            padding: 10px;
+            z-index: 1000;
+
+            /* center screen */
+            top: 20px;
+            left: 50%;
+            transform: translate(-50%, 0);
+        }
     </style>
 </head>
 
@@ -159,8 +183,11 @@
         href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css"
         type="text/css">
 
+    <div id="info">Edit mode</div>
+
     <div id="panel">
         <div id="legend"></div>
+        <div id="actions"></div>
         <div id="property">
             <div id="list"></div>
             <div id="property-controls"></div>
@@ -169,6 +196,9 @@
 
     <div id="map"></div>
     <script>
+
+        const infoDiv = document.getElementById("info")
+        const actionsListDiv = document.getElementById("actions")
 
         const propertyListDiv = document.getElementById("list")
         const propertyControlsDiv = document.getElementById("property-controls")
@@ -202,6 +232,9 @@
         );
         map.addControl(new mapboxgl.NavigationControl());
 
+
+
+
         // Draw options
         var drawOptions = {
             displayControlsDefault: false,
@@ -210,13 +243,86 @@
                 point: true,
                 trash: true
             },
+            userProperties: true,
         };
         var Draw = new MapboxDraw(drawOptions);
         map.addControl(Draw, 'top-right');
 
+        map.on('draw.modechange', function (event) {
+            infoDiv.innerText = `Draw mode: ${event.mode}`
+        });
 
+        map.on('draw.selectionchange', function (event) {
+            console.log('Selection changed:', event.features);
+            //TODO refactor!!!!
+            const selectedPolygon = Draw.getSelected().features[0]
+            if (selectedPolygon) {
+                const center = turf.centerOfMass(selectedPolygon).geometry.coordinates
+                const popup = new mapboxgl.Popup({
+                    offset: [0, -15],
+                })
+                    .setLngLat(center)
+                    .addTo(map);
+
+                const soilClasses = [
+                    { id: 1, name: "steep country", color: "#FF0000" },
+                    { id: 2, name: "medium to steep country", color: "#FFA500" },
+                    { id: 3, name: "cultivable rolling country", color: "#800080" },
+                    { id: 4, name: "River flats", color: "#0000FF" },
+                ]
+
+                console.log('Creating element');
+                const dropDown = document.createElement("select")
+
+                dropDown.innerHTML = `
+                    <option selected disabled value="">Select option</option>`
+                    + soilClasses.map(item => {
+                        return `<option value="${item.id}">${item.name}</option>`
+                    }).join("")
+
+                dropDown.addEventListener("change", (e) => {
+                    const id = e.target.value
+                    const data = soilClasses.find(item => item.id === parseInt(id))
+                    if (data) {
+                        const { color, name } = data
+                        const polyId = Draw.getSelectedIds()[0]
+                        if (!polyId) return
+
+                        Draw.setFeatureProperty(polyId, 'color', color)
+                        Draw.setFeatureProperty(polyId, 'name', name)
+
+                        // console.log('123', 123);
+
+                        popup.remove()
+                        Draw.changeMode('simple_select')
+                        Draw.changeMode('direct_select', { featureId: polyId });
+                    }
+                })
+
+                popup.setDOMContent(dropDown)
+
+            }
+        });
 
         map.on('load', () => {
+
+            //DRAW styles update
+            const filterOption = ['get', 'user_color']
+            map.setPaintProperty("gl-draw-polygon-fill-inactive.cold", 'fill-color', filterOption)
+            map.setPaintProperty("gl-draw-polygon-fill-active.cold", 'fill-color', filterOption)
+            map.setPaintProperty("gl-draw-polygon-fill-static.cold", 'fill-color', filterOption)
+            map.setPaintProperty("gl-draw-polygon-fill-inactive.hot", 'fill-color', filterOption)
+            map.setPaintProperty("gl-draw-polygon-fill-active.hot", 'fill-color', filterOption)
+            map.setPaintProperty("gl-draw-polygon-fill-static.hot", 'fill-color', filterOption)
+
+            map.setPaintProperty("gl-draw-polygon-fill-inactive.cold", 'fill-opacity', 0.6)
+            map.setPaintProperty("gl-draw-polygon-fill-active.cold", 'fill-opacity', 0.6)
+            map.setPaintProperty("gl-draw-polygon-fill-static.cold", 'fill-opacity', 0.6)
+            map.setPaintProperty("gl-draw-polygon-fill-inactive.hot", 'fill-opacity', 0.6)
+            map.setPaintProperty("gl-draw-polygon-fill-active.hot", 'fill-opacity', 0.6)
+            map.setPaintProperty("gl-draw-polygon-fill-static.hot", 'fill-opacity', 0.6)
+
+
             // map.addSource('wms-test-source', {
             //     type: 'raster',
             //     tiles: [
@@ -362,7 +468,17 @@
                 },
             );
 
+
+
+
             map.on('click', 'landuse-data-fill', (e) => {
+
+                const drawMode = Draw.getMode()
+                console.log('drawMode', drawMode);
+                if (drawMode === "draw_polygon" || drawMode === "direct_select") {
+                    return
+                }
+
                 const features = map.queryRenderedFeatures(e.point, { layers: ['landuse-data-fill'] });
                 if (!features.length) {
                     return;
@@ -374,38 +490,35 @@
 
                 updateLandUseColorsLayer(polygonId)
 
-                const soilClasses = [
-                    { id: 1, name: "steep country", color: "red" },
-                    { id: 2, name: "medium to steep country", color: "orange" },
-                    { id: 3, name: "cultivable rolling country", color: "purple" },
-                    { id: 4, name: "River flats", color: "blue" },
-                ]
+                // const soilClasses = [
+                //     { id: 1, name: "steep country", color: "red" },
+                //     { id: 2, name: "medium to steep country", color: "orange" },
+                //     { id: 3, name: "cultivable rolling country", color: "purple" },
+                //     { id: 4, name: "River flats", color: "blue" },
+                // ]
 
-                const dropDown = document.createElement("select")
-                dropDown.innerHTML = `<option  selected disabled  value="">Select option</option>`
-                    + soilClasses.map(item => {
-                        return `<option value="${item.color}">${item.name}</option>`
-                    }).join("")
-
-                dropDown.addEventListener("change", (e) => {
-                    const selectedValue = e.target.value
-
-                    const polygon = landUseColors.find(item => item.id === polygonId)
-                    if (polygon) {
-                        polygon.color = selectedValue
-                    } else {
-                        landUseColors.push({
-                            id: polygonId,
-                            color: selectedValue,
-                        })
-                    }
-
-                    updateLandUseColorsLayer()
-                })
+                // const dropDown = document.createElement("select")
+                // dropDown.innerHTML = `<option  selected disabled  value="">Select option</option>`
+                //     + soilClasses.map(item => {
+                //         return `<option value="${item.color}">${item.name}</option>`
+                //     }).join("")
+                // dropDown.addEventListener("change", (e) => {
+                //     const selectedValue = e.target.value
+                //     const polygon = landUseColors.find(item => item.id === polygonId)
+                //     if (polygon) {
+                //         polygon.color = selectedValue
+                //     } else {
+                //         landUseColors.push({
+                //             id: polygonId,
+                //             color: selectedValue,
+                //         })
+                //     }
+                //     updateLandUseColorsLayer()
+                // })
 
                 const contentDiv = document.createElement("div")
                 contentDiv.appendChild(document.createTextNode(info))
-                contentDiv.appendChild(dropDown)
+                // contentDiv.appendChild(dropDown)
 
                 const popup = new mapboxgl.Popup({
                     offset: [0, -15],
@@ -447,33 +560,57 @@
                 }).join("</br>")
             })
             loadPropertyControls()
+
         });
 
-        switchersEnableDiv.appendChild(buildSwitcher("Select your property", checked => {
+        const property = buildSwitcher("Property", checked => {
             const display = checked ? "visible" : "none"
             map.setLayoutProperty('base-data', 'visibility', display);
-        }, false, true))
+        }, false, true)
+        switchersEnableDiv.appendChild(property.div)
 
-        switchersEnableDiv.appendChild(buildSwitcher("Land Use Capability", checked => {
+        const landUse = buildSwitcher("Land Use Capability", checked => {
             const display = checked ? "visible" : "none"
             map.setLayoutProperty('landuse-data', 'visibility', display);
             map.setLayoutProperty('landuse-data-fill', 'visibility', display);
-        }, false, false))
+        }, false, false)
+        switchersEnableDiv.appendChild(landUse.div)
 
-        // switchersEnableDiv.appendChild(buildSwitcher("Soils", checked => {
-        //     const display = checked ? "visible" : "none"
-        //     map.setLayoutProperty('soil-data', 'visibility', display);
-        // }, false, false))
-
-        switchersEnableDiv.appendChild(buildSwitcher("Waterways", checked => {
+        const waterways = buildSwitcher("Waterways", checked => {
             const display = checked ? "visible" : "none"
             map.setLayoutProperty('waterways-data', 'visibility', display);
-        }, false, false))
+        }, false, false)
+        switchersEnableDiv.appendChild(waterways.div)
 
-        switchersEnableDiv.appendChild(buildSwitcher("Low Slope", checked => {
+        const soil = buildSwitcher("Soil", checked => {
             const display = checked ? "visible" : "none"
-            map.setLayoutProperty('lowslope-data', 'visibility', display);
-        }, false, false))
+            map.setLayoutProperty('soil-data', 'visibility', display);
+        }, false, false)
+        switchersEnableDiv.appendChild(soil.div)
+
+
+
+        actionsListDiv.appendChild(buildActionButton({
+            name: "Select your property", callback: () => {
+                property.turnOn()
+                landUse.turnOff()
+            }
+        }))
+        actionsListDiv.appendChild(buildActionButton({
+            name: "Map your Land Units", callback: () => {
+                property.turnOff()
+                landUse.turnOn()
+                //disable interactivity for landUse layer
+                Draw.changeMode('draw_polygon');
+            }
+        }))
+        actionsListDiv.appendChild(buildActionButton({
+            name: "View LU/Soils info", callback: () => {
+                property.turnOff()
+                landUse.turnOn()
+            }
+        }))
+
 
         function updateLandUseColorsLayer(selectedId) {
 
@@ -550,32 +687,38 @@
             propertyControlsDiv.appendChild(loadButton)
         }
 
-        function buildCheckBox({ initState = "checked", name, callback, labelCallback, plusShow = true, plusCallback, tooltip }) {
-            const div = document.createElement('div');
-            div.className = 'check-item'
-            const checkbox = document.createElement('input');
-            checkbox.checked = initState
-            checkbox.dataset.circuit = name
-            checkbox.type = "checkbox";
-            checkbox.name = "name";
-            checkbox.value = "value";
-            checkbox.id = "";
-            checkbox.addEventListener("change", () => {
-                if (typeof callback === "function") callback(checkbox.checked)
+        function buildActionButton({ name, callback }) {
+            const div = document.createElement("div")
+            div.style.display = "flex"
+            div.style.alignItems = "center"
+            div.style.cursor = "pointer"
+            div.style.gap = "5px"
+            div.style.userSelect = "none"
+
+            div.addEventListener("click", () => {
+                if (typeof callback === "function") callback()
             })
-            const label = document.createElement('span')
-            label.htmlFor = "";
-            label.className = 'tooltip-container cooltipz--top cooltipz--static'
-            label.appendChild(document.createTextNode(name));
-            div.appendChild(checkbox);
-            div.appendChild(label);
+
+            const image = document.createElement("img")
+            image.src = "icons/edit.svg"
+            image.style.width = "20px"
+            image.style.height = "20px"
+            div.appendChild(image)
+
+            const text = document.createElement("span")
+            text.innerText = name
+            div.appendChild(text)
+
             return div
         }
+
+
 
         function buildSwitcher(labelText, action, colorCircle, checked = true) {
 
             const div = document.createElement("div")
             div.className = "switcher-div"
+            div.style.cursor = "pointer"
 
             const label = document.createElement("label")
             label.className = "switch"
@@ -583,11 +726,33 @@
             const checkbox = document.createElement("input")
             checkbox.type = "checkbox"
             checkbox.checked = checked
-            checkbox.addEventListener("input", () => {
+
+            // checkbox.addEventListener("input", () => {
+            //     if (typeof action === "function") {
+            //         action(checkbox.checked)
+            //     }
+            // })
+
+            div.addEventListener("click", () => {
+                checkbox.checked = !checkbox.checked
                 if (typeof action === "function") {
                     action(checkbox.checked)
                 }
             })
+
+            function turnOn() {
+                checkbox.checked = true
+                if (typeof action === "function") {
+                    action(checkbox.checked)
+                }
+            }
+
+            function turnOff() {
+                checkbox.checked = false
+                if (typeof action === "function") {
+                    action(checkbox.checked)
+                }
+            }
 
             const color = document.createElement("div")
             color.style.width = "10px"
@@ -609,7 +774,7 @@
             if (colorCircle) div.appendChild(color)
             div.appendChild(text)
 
-            return div
+            return { div, turnOn, turnOff }
         }
 
 
