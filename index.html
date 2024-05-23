@@ -197,6 +197,7 @@
     <div id="map"></div>
     <script>
 
+        let lockPropertyFromClick = false
         let currentMode = "simple_select"
         const infoDiv = document.getElementById("info")
         const actionsListDiv = document.getElementById("actions")
@@ -250,7 +251,6 @@
             infoDiv.innerText = `Draw mode: ${event.mode}`
         });
 
-        map.on("draw.")
 
         map.on('draw.selectionchange', function (event) {
 
@@ -547,6 +547,8 @@
 
             map.on("click", "base-data", e => {
 
+                if (lockPropertyFromClick) return;
+
                 const features = map.queryRenderedFeatures(e.point, { layers: ['base-data'] });
                 if (!features.length) {
                     return;
@@ -577,11 +579,21 @@
 
         });
 
+
+        const divLock = document.createElement("div")
+        divLock.style = "display:flex; border:1px solid red;"
         const property = buildSwitcher("Property", checked => {
             const display = checked ? "visible" : "none"
             map.setLayoutProperty('base-data', 'visibility', display);
         }, false, true)
-        switchersEnableDiv.appendChild(property.div)
+        const lockProperty = buildSwitcher("Lock", checked => {
+            lockPropertyFromClick = checked
+        }, false, false)
+
+        divLock.appendChild(property.div)
+        divLock.appendChild(lockProperty.div)
+        switchersEnableDiv.appendChild(divLock)
+
 
         const landUse = buildSwitcher("Land Use Capability", checked => {
             const display = checked ? "visible" : "none"
