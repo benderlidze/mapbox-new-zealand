@@ -3,35 +3,242 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Mapbox Free Draw Mode Example</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Mapbox GL JS CSS -->
-    <link href='https://api.mapbox.com/mapbox-gl-js/v2.9.2/mapbox-gl.css' rel='stylesheet' />
-    <!-- Mapbox GL JS JavaScript -->
-    <script src='https://api.mapbox.com/mapbox-gl-js/v2.9.2/mapbox-gl.js'></script>
-    <!-- Mapbox Draw CSS -->
-    <link href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.3.0/mapbox-gl-draw.css'
-        rel='stylesheet' />
-    <!-- Mapbox Draw JavaScript -->
-    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.3.0/mapbox-gl-draw.js'></script>
+    <title>Add a new layer to a slot</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+
+    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js'></script>
+    <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css'
+        type='text/css' />
+
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        #panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 5px
+        }
+
+        #legend {
+            background-color: white;
+            border-radius: 10px;
+            padding: 10px;
+
+        }
+
+        #property {
+            background-color: white;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        #filters {
+            background-color: white;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            border-radius: 20px;
+            z-index: 10;
+            padding: 10px;
+        }
+
+        .switcher-div {
+            display: flex;
+            align-items: center;
+            margin: 5px;
+        }
+
+        .switcher-div>div {
+            margin-left: 5px;
+        }
+
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 35px;
+            height: 15px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: 0.4s;
+            transition: 0.4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 11px;
+            width: 11px;
+            left: 3px;
+            bottom: 2px;
+            background-color: white;
+            -webkit-transition: 0.4s;
+            transition: 0.4s;
+        }
+
+        input:checked+.slider {
+            background-color: #2196f3;
+        }
+
+        input:focus+.slider {
+            box-shadow: 0 0 1px #2196f3;
+        }
+
+        input:checked+.slider:before {
+            -webkit-transform: translateX(18px);
+            -ms-transform: translateX(18px);
+            transform: translateX(18px);
+        }
+
+        /* Rounded sliders */
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+        #loading {
+            background-color: white;
+            position: absolute;
+            border-radius: 10px;
+            z-index: 10;
+            padding: 20px;
+            font-size: 20px;
+
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #property-controls {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+        }
+
+        #actions {
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            border-radius: 10px;
+            padding: 10px;
+            gap: 10px
+        }
+
+        #info {
+            position: absolute;
+            background-color: white;
+            border-radius: 10px;
+            padding: 10px;
+            z-index: 1000;
+
+            /* center screen */
+            top: 20px;
+            left: 50%;
+            transform: translate(-50%, 0);
+        }
+
+        #list {
+            display: flex;
+            gap: 2px;
+            flex-direction: column;
+        }
+    </style>
 </head>
 
 <body>
-    <div id='map' style='width: 100%; height: 100vh;'></div>
+    <!-- Load the `mapbox-gl-geocoder` plugin. -->
+    <script
+        src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+    <link rel="stylesheet"
+        href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css"
+        type="text/css">
+
+    <div id="info">Edit mode</div>
+
+    <div id="panel">
+        <div id="legend"></div>
+        <div id="actions"></div>
+        <div id="property">
+            <div id="list"></div>
+            <div id="property-controls"></div>
+        </div>
+    </div>
+
+    <div id="map"></div>
     <script>
-        // Mapbox access token
+
+        let lockPropertyFromClick = false
+        let currentMode = "simple_select"
+        const infoDiv = document.getElementById("info")
+        const actionsListDiv = document.getElementById("actions")
+
+        const propertyListDiv = document.getElementById("list")
+        const propertyControlsDiv = document.getElementById("property-controls")
+
+        const switchersEnableDiv = document.getElementById("legend")
+        const soilClasses = ["RFM", "RFW", "UEP", "GOA", "LOV", "LOT", "ZOH", "ZOT", "BOA", "WT", "BOM", "RTB", "LOA", "LIM", "ROT", "ROW", "BOT", "MOBL", "GOT", "BAP", "WX", "ice", "rive", "BAT", "PXM", "BFT", "town", "PIT", "BLA", "UEM", "UYT", "WF", "MOZ", "ZPT", "WS", "RST", "NXT", "ZXP", "RTT", "LOVA", "BLT", "LGT", "MOT", "PPU", "MOI", "NOA", "BOP", "BXT", "XOT", "BAM", "ZDH", "NOM", "UPS", "estu", "BLAD", "BAO", "BST", "GAP", "GRQ", "PPJX", "OMA", "PID", "NOT", "ZPH", "PJM", "BLX", "lake", "BLD", "GRT", "GSC", "PIM", "GOE", "RFT", "PJT", "PPJ", "ERT", "LPT", "BFL", "BMT", "GUFQ", "UST", "EOJC", "MIW", "RFAW", "BFA", "BMG", "PXJN", "BOC", "WO", "BMM", "BSA", "AFST", "BOH", "SIT", "EMT", "SAT", "UEY", "GAT", "ZPZ", "UPT", "GUF", "EOM", "OHM", "PPX", "PLT", "EOJ", "UYM", "LIT", "OHA", "RTM", "PJA", "PJN", "SAH", "SJT", "PXMC", "GSO", "MOBA", "BSM", "GST", "BFM", "RSM", "ERW", "PXJ", "MOM", "BMA", "PXJM", "SJQ", "RXT", "OMM", "RTBP", "GOO", "EMG", "XPT", "ROA", "ZXF", "EOT", "ZXQ", "EOC", "BFMA", "ZXH", "WGFU", "UDP", "NXM", "XNT", "OFA", "PPT", "ROM", "PLM", "quar", "BFP", "ZPP", "ZGT", "NPT", "MOL", "RFA", "WST", "PXJC", "SAM", "OFS", "BFC", "ZXU", "BLM", "GOC", "ROAW", "ATT", "RFMA", "BFAL", "NPA", "GAO", "UDM", "SAW", "MOBT", "EPT", "GRA", "WH", "BOI", "MIM", "RTBL", "PUM", "EODC", "EVT", "SJM", "BOMA", "MPT", "NXA", "BLAM", "MIT", "RTBA", "WHA", "GRO", "ZPU", "PJC", "EVM", "PXT", "EMM", "ZPOZ", "RFMQ", "PPF", "GOM", "ERO", "GOP", "RF?", "WGF", "BSP", "SJL"]
+
+        const selectedBasePolygons = createObservableArray(callback);
+        const landUseColors = createObservableArray(() => {
+
+        });
+
         mapboxgl.accessToken = 'pk.eyJ1Ijoib3VyZmFybXMiLCJhIjoiY2x3YWRhbW9nMGRsNjJxcHFwdW81emVhNSJ9.forvlRpP1nOZekrRDqBKjQ';
-
-        // Mapbox map options
-        var mapOptions = {
-            container: 'map', // container id
-            style: 'mapbox://styles/mapbox/streets-v11', // stylesheet location
-            center: [0, 0], // starting position [lng, lat]
-            zoom: 10 // starting zoom
-        };
-
-        // Create a Mapbox GL JS map
-        var map = new mapboxgl.Map(mapOptions);
+        const map = new mapboxgl.Map({
+            container: 'map',
+            // You can add layers to the predetermined slots within the Standard style basemap.
+            // style: 'mapbox://styles/mapbox/standard',
+            style: 'mapbox://styles/mapbox/satellite-v9',
+            center: { lng: 174.95943864902665, lat: -37.70716520232802 }, //
+            zoom: 9,
+            projection: "mercator"
+        });
+        // Add the control to the map.
+        map.addControl(
+            new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+                mapboxgl: mapboxgl,
+                // Limit seach results to Australia.
+                countries: 'nz',
+            })
+        );
+        map.addControl(new mapboxgl.NavigationControl());
 
         // Draw options
         var drawOptions = {
@@ -41,18 +248,656 @@
                 point: true,
                 trash: true
             },
-            modes: Object.assign({
-                draw_circle: MapboxDraw.modes.draw_circle,
-                draw_rectangle: MapboxDraw.modes.draw_rectangle
-            }, MapboxDraw.modes),
-            defaultMode: 'draw_polygon'
+            userProperties: true,
+        };
+        var Draw = new MapboxDraw(drawOptions);
+        map.addControl(Draw, 'top-right');
+
+        // map.on('draw.modechange', function (event) {
+        //     infoDiv.innerText = `Draw mode: ${event.mode}`
+        // });
+
+
+        let popup;
+
+        map.on('draw.selectionchange', function (event) {
+
+            updatePolygonInfoTab()
+
+            popup && popup.remove()
+            if (currentMode === "simple_select") {
+                //DISABLE DRAW When not in draw mode
+                Draw.changeMode('simple_select')
+                return;
+            }
+
+            infoDiv.innerHTML = ""
+            const selectedPolygon = Draw.getSelected().features[0]
+
+            if (!selectedPolygon) return;
+
+            if (selectedPolygon) {
+                const center = turf.centerOfMass(selectedPolygon).geometry.coordinates
+                popup = new mapboxgl.Popup({
+                    offset: [0, -15],
+                })
+                    .setLngLat(center)
+                    .addTo(map);
+
+                const soilClasses = [
+                    { id: 1, name: "steep country", color: "#FF0000" },
+                    { id: 2, name: "medium to steep country", color: "#FFA500" },
+                    { id: 3, name: "cultivable rolling country", color: "#800080" },
+                    { id: 4, name: "River flats", color: "#0000FF" },
+                ]
+
+                console.log('Creating element');
+                const dropDown = document.createElement("select")
+
+                dropDown.innerHTML = `
+                    <option selected disabled value="">Select option</option>`
+                    + soilClasses.map(item => {
+                        return `<option value="${item.id}">${item.name}</option>`
+                    }).join("")
+
+                dropDown.addEventListener("change", (e) => {
+                    const id = e.target.value
+                    const data = soilClasses.find(item => item.id === parseInt(id))
+                    if (data) {
+                        const { color, name } = data
+                        const polyId = Draw.getSelectedIds()[0]
+                        if (!polyId) return
+
+                        Draw.setFeatureProperty(polyId, 'color', color)
+                        Draw.setFeatureProperty(polyId, 'name', name)
+
+                        // console.log('123', 123);
+                        popup.remove()
+                        Draw.changeMode('simple_select')
+                        Draw.changeMode('direct_select', { featureId: polyId });
+                    }
+                })
+
+                infoDiv.appendChild(dropDown)
+
+                const areaText = document.createElement("div")
+                areaText.innerText = polyArea(selectedPolygon)
+                infoDiv.appendChild(areaText)
+
+            }
+
+        });
+
+        function polyArea(polygon) {
+            const areaInSquareMeters = turf.area(polygon)
+            const areaInHectares = areaInSquareMeters / 10000;
+            return `Area: ${areaInHectares.toFixed(2)} ha`
+        }
+
+        map.on('load', () => {
+
+            //DRAW styles update
+            const filterOption = ['get', 'user_color']
+            map.setPaintProperty("gl-draw-polygon-fill-inactive.cold", 'fill-color', filterOption)
+            map.setPaintProperty("gl-draw-polygon-fill-active.cold", 'fill-color', filterOption)
+            map.setPaintProperty("gl-draw-polygon-fill-static.cold", 'fill-color', filterOption)
+            map.setPaintProperty("gl-draw-polygon-fill-inactive.hot", 'fill-color', filterOption)
+            map.setPaintProperty("gl-draw-polygon-fill-active.hot", 'fill-color', filterOption)
+            map.setPaintProperty("gl-draw-polygon-fill-static.hot", 'fill-color', filterOption)
+
+            map.setPaintProperty("gl-draw-polygon-fill-inactive.cold", 'fill-opacity', 0.6)
+            map.setPaintProperty("gl-draw-polygon-fill-active.cold", 'fill-opacity', 0.6)
+            map.setPaintProperty("gl-draw-polygon-fill-static.cold", 'fill-opacity', 0.6)
+            map.setPaintProperty("gl-draw-polygon-fill-inactive.hot", 'fill-opacity', 0.6)
+            map.setPaintProperty("gl-draw-polygon-fill-active.hot", 'fill-opacity', 0.6)
+            map.setPaintProperty("gl-draw-polygon-fill-static.hot", 'fill-opacity', 0.6)
+
+
+            // map.addSource('wms-test-source', {
+            //     type: 'raster',
+            //     tiles: [
+            //         'https://tiles-cdn.koordinates.com/services;key=1fe89c918dad495ca373b35a1d9e12a4/tiles/v4/layer=50804.404152,color=003399/{z}/{x}/{y}.png'
+            //     ],
+            //     tileSize: 256
+            // });
+            // map.addLayer({
+            //     id: 'wms-test-layer',
+            //     type: 'raster',
+            //     'visibility': "visible",
+            //     source: 'wms-test-source',
+            //     paint: {}
+            // });
+
+            map.addSource('base', {
+                type: 'vector',
+                url: 'mapbox://ourfarms.b895136s'
+            });
+            map.addLayer(
+                {
+                    'id': 'base-data',
+                    'type': 'fill',
+                    'source': 'base',
+                    'visibility': "visible",
+                    'source-layer': 'nzpropertytitles',
+                    'layout': {},
+                    'paint': {
+                        'fill-color': 'gray',
+                        'fill-opacity': 0.5,
+                    }
+                },
+            );
+            map.addLayer(
+                {
+                    'id': 'base-data-outline',
+                    'type': 'line',
+                    'source': 'base',
+                    'visibility': "visible",
+                    'source-layer': 'nzpropertytitles',
+                    'layout': {},
+                    'paint': {
+                        'line-color': 'black',
+                        'line-width': 1
+                    }
+                },
+            );
+
+            map.addSource('waterways', {
+                type: 'vector',
+                url: 'mapbox://ourfarms.c10kf05t'
+            });
+            map.addLayer(
+                {
+                    'id': 'waterways-data',
+                    'type': 'line',
+                    'source': 'waterways',
+                    'source-layer': 'river-flows-2nhit5',
+                    'layout': {
+                        'visibility': "none",
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    'paint': {
+                        'line-color': 'blue',
+                        'line-width': 2
+                    }
+                },
+            );
+
+            // map.addSource('soil', {
+            //     type: 'vector',
+            //     url: 'mapbox://ourfarms.bkfvmvux'
+            // });
+            // map.addLayer(
+            //     {
+            //         'id': 'soil-data',
+            //         'type': 'fill',
+            //         'source': 'soil',
+            //         'layout': {
+            //             'visibility': "none",
+            //         },
+            //         'source-layer': 'mfe-fundamental-soil-layers-n-9901jl',
+            //         'paint': {
+            //             'fill-color': 'blue',
+            //             'fill-opacity': 0.5
+            //         }
+            //     },
+            // );
+
+            map.addSource('landuse', {
+                type: 'vector',
+                url: 'mapbox://ourfarms.1tk8wn40'
+            });
+            map.addLayer(
+                {
+                    'id': 'landuse-data',
+                    'type': 'line',
+                    'source': 'landuse',
+                    'source-layer': 'nzlri-land-use-capability-202-0csqzx',
+                    'layout': {
+                        'visibility': "none",
+                    },
+                    'paint': {
+                        'line-color': 'white',
+                        'line-width': 1
+                    }
+                },
+            );
+            map.addLayer(
+                {
+                    'id': 'landuse-data-fill',
+                    'type': 'fill',
+                    'source': 'landuse',
+                    'source-layer': 'nzlri-land-use-capability-202-0csqzx',
+                    'layout': {
+                        'visibility': "none",
+                    },
+                    'paint': {
+                        'fill-color': 'yellow',
+                        'fill-opacity': 0
+                    }
+                },
+            );
+
+            map.addSource('lowslope', {
+                type: 'vector',
+                url: 'mapbox://ourfarms.3jcqeu12'
+            });
+            map.addLayer(
+                {
+                    'id': 'lowslope-data',
+                    'type': 'fill',
+                    'source': 'lowslope',
+                    'source-layer': 'REDUCED-stock-exclusion-low-s-dos2ed',
+                    'layout': {
+                        'visibility': "none",
+                    },
+                    'paint': {
+                        'fill-color': 'red',
+                        'fill-opacity': 0.5
+                    }
+                },
+            );
+
+            map.on('click', 'landuse-data-fill', (e) => {
+
+                const drawMode = Draw.getMode()
+                console.log('drawMode', drawMode);
+                if (drawMode === "draw_polygon" || drawMode === "direct_select") {
+                    return
+                }
+
+                console.log('currentMode', currentMode);
+                // if (Draw.getMode() !== "simple_select") return;
+                if (currentMode !== "simple_select") return;
+
+                const features = map.queryRenderedFeatures(e.point, { layers: ['landuse-data-fill'] });
+                if (!features.length) {
+                    return;
+                }
+
+                const feature = features[0];
+                const polygonId = feature.properties.polyid
+                const info = feature.properties.nzcu_descr
+
+                updateLandUseColorsLayer(polygonId)
+
+                // const soilClasses = [
+                //     { id: 1, name: "steep country", color: "red" },
+                //     { id: 2, name: "medium to steep country", color: "orange" },
+                //     { id: 3, name: "cultivable rolling country", color: "purple" },
+                //     { id: 4, name: "River flats", color: "blue" },
+                // ]
+
+                // const dropDown = document.createElement("select")
+                // dropDown.innerHTML = `<option  selected disabled  value="">Select option</option>`
+                //     + soilClasses.map(item => {
+                //         return `<option value="${item.color}">${item.name}</option>`
+                //     }).join("")
+                // dropDown.addEventListener("change", (e) => {
+                //     const selectedValue = e.target.value
+                //     const polygon = landUseColors.find(item => item.id === polygonId)
+                //     if (polygon) {
+                //         polygon.color = selectedValue
+                //     } else {
+                //         landUseColors.push({
+                //             id: polygonId,
+                //             color: selectedValue,
+                //         })
+                //     }
+                //     updateLandUseColorsLayer()
+                // })
+
+                const contentDiv = document.createElement("div")
+                contentDiv.appendChild(document.createTextNode(info))
+                // contentDiv.appendChild(dropDown)
+
+                const popup = new mapboxgl.Popup({
+                    offset: [0, -15],
+                })
+                    .setLngLat(e.lngLat)
+                    .setDOMContent(contentDiv)
+                    .addTo(map);
+
+                popup.once('close', function () {
+                    updateLandUseColorsLayer()
+                });
+            });
+
+            map.on("click", "base-data", e => {
+
+                if (lockPropertyFromClick) return;
+
+                const features = map.queryRenderedFeatures(e.point, { layers: ['base-data'] });
+                if (!features.length) {
+                    return;
+                }
+
+                const feature = features[0];
+                console.log('feature', feature);
+                const polygonId = feature.properties.id
+
+                if (selectedBasePolygons.includes(polygonId)) {
+                    selectedBasePolygons.splice(selectedBasePolygons.indexOf(polygonId), 1)
+                } else {
+                    selectedBasePolygons.push(polygonId)
+                }
+
+                map.setPaintProperty('base-data', 'fill-opacity', [
+                    'case',
+                    ['in', ['get', 'id'], ['literal', selectedBasePolygons]],
+                    0,
+                    0.5
+                ]);
+
+                // propertyListDiv.innerHTML = selectedBasePolygons.map(p => {
+                //     return `${p}`
+                // }).join("</br>")
+            })
+            loadPropertyControls()
+
+        });
+
+
+        const divLock = document.createElement("div")
+        divLock.style = "display:flex; border:1px solid red;"
+        const property = buildSwitcher("Property", checked => {
+            const display = checked ? "visible" : "none"
+            map.setLayoutProperty('base-data', 'visibility', display);
+        }, false, true)
+        const lockProperty = buildSwitcher("Lock", checked => {
+            lockPropertyFromClick = checked
+        }, false, false)
+
+        divLock.appendChild(property.div)
+        divLock.appendChild(lockProperty.div)
+        switchersEnableDiv.appendChild(divLock)
+
+
+        const landUse = buildSwitcher("Land Use Capability", checked => {
+            const display = checked ? "visible" : "none"
+            map.setLayoutProperty('landuse-data', 'visibility', display);
+            map.setLayoutProperty('landuse-data-fill', 'visibility', display);
+        }, false, false)
+        switchersEnableDiv.appendChild(landUse.div)
+
+        const waterways = buildSwitcher("Waterways", checked => {
+            const display = checked ? "visible" : "none"
+            map.setLayoutProperty('waterways-data', 'visibility', display);
+        }, false, false)
+        switchersEnableDiv.appendChild(waterways.div)
+
+        const soil = buildSwitcher("Soil", checked => {
+            const display = checked ? "visible" : "none"
+            map.setLayoutProperty('soil-data', 'visibility', display);
+        }, false, false)
+        switchersEnableDiv.appendChild(soil.div)
+
+
+        actionsListDiv.appendChild(buildActionButton({
+            name: "Select your property", callback: () => {
+                Draw.changeMode(Draw.modes.SIMPLE_SELECT)
+                lockProperty.turnOff()
+                property.turnOn()
+                landUse.turnOff()
+                currentMode = "simple_select"
+            }
+        }))
+        actionsListDiv.appendChild(buildActionButton({
+            name: "Map your Land Units", callback: () => {
+                lockProperty.turnOn()
+                property.turnOn()
+                landUse.turnOn()
+                //disable interactivity for landUse layer
+                currentMode = "draw_polygon"
+            }
+        }))
+        actionsListDiv.appendChild(buildActionButton({
+            name: "View LU/Soils info", callback: () => {
+                property.turnOff()
+                landUse.turnOn()
+                currentMode = "simple_select"
+                Draw.changeMode('simple_select')
+            }
+        }))
+
+
+        function updatePolygonInfoTab() {
+
+            propertyListDiv.innerHTML = ""
+
+            const polygons = Draw.getAll().features
+            polygons.forEach(poly => {
+
+                const div = document.createElement("div")
+                div.style.display = "flex"
+                div.style.alignItems = "center"
+                div.style.gap = "5px"
+
+
+                const color = document.createElement("div")
+                color.style.backgroundColor = poly.properties.color
+                color.style.width = "20px"
+                color.style.height = "20px"
+                color.style.borderRadius = "20px"
+
+
+                const text = document.createElement("span")
+                text.innerText = poly.properties.name
+
+                const area = document.createElement("span")
+                area.innerText = polyArea(poly)
+
+                div.appendChild(color)
+                div.appendChild(text)
+                div.appendChild(area)
+
+
+                propertyListDiv.appendChild(div)
+            })
+
+
+        }
+
+
+        function updateLandUseColorsLayer(selectedId) {
+
+            map.setPaintProperty('landuse-data-fill', 'fill-opacity', 0);
+
+            const colors = landUseColors.map(item => {
+                return [item.id, item.color]
+            })
+
+            const opacity = landUseColors.map(item => {
+                return [item.id, 0.5]
+            })
+
+            //hightligh selected polygon
+            if (selectedId && !landUseColors.find(item => item.id === selectedId)) {
+                opacity.push([selectedId, 0.5])
+            }
+
+            if (colors.length > 0) {
+                map.setPaintProperty('landuse-data-fill', 'fill-color', [
+                    'match',
+                    ['get', 'polyid'],
+                    ...colors.flat(),
+                    'yellow'
+                ]);
+            }
+
+            if (opacity.length > 0) {
+                map.setPaintProperty('landuse-data-fill', 'fill-opacity', [
+                    'match',
+                    ['get', 'polyid'],
+                    ...opacity.flat(),
+                    0
+                ]);
+            }
+
+        }
+
+        function loadPropertyControls() {
+
+            const saveButton = document.createElement("button")
+            saveButton.innerText = "Save"
+            saveButton.addEventListener("click", () => {
+
+                if (selectedBasePolygons) {
+                    localStorage.setItem('appPolygonsData', JSON.stringify(
+                        Draw.getAll()
+                    ))
+                }
+            })
+
+            const loadButton = document.createElement("button")
+            loadButton.innerText = "Load"
+            loadButton.addEventListener("click", () => {
+                const appPolygonsData = localStorage.getItem('appPolygonsData')
+                if (appPolygonsData) {
+                    const polygonsArray = JSON.parse(appPolygonsData)
+                    console.log('polygonsArray', polygonsArray);
+                    Draw.add(polygonsArray)
+                    updatePolygonInfoTab()
+                    // if (polygonsArray.selectedBasePolygons) {
+                    //     selectedBasePolygons.length = 0
+                    //     selectedBasePolygons.push(...polygonsArray.selectedBasePolygons)
+                    //     map.setPaintProperty('base-data', 'fill-opacity', [
+                    //         'case',
+                    //         ['in', ['get', 'id'], ['literal', selectedBasePolygons]],
+                    //         0,
+                    //         0.5
+                    //     ]);
+                    // }
+                }
+            })
+            propertyControlsDiv.appendChild(saveButton)
+            propertyControlsDiv.appendChild(loadButton)
+        }
+
+        function buildActionButton({ name, callback }) {
+            const div = document.createElement("div")
+            div.style.display = "flex"
+            div.style.alignItems = "center"
+            div.style.cursor = "pointer"
+            div.style.gap = "5px"
+            div.style.userSelect = "none"
+
+            div.addEventListener("click", () => {
+                if (typeof callback === "function") callback()
+            })
+
+            const image = document.createElement("img")
+            image.src = "icons/edit.svg"
+            image.style.width = "20px"
+            image.style.height = "20px"
+            div.appendChild(image)
+
+            const text = document.createElement("span")
+            text.innerText = name
+            div.appendChild(text)
+
+            return div
+        }
+
+
+
+        function buildSwitcher(labelText, action, colorCircle, checked = true) {
+
+            const div = document.createElement("div")
+            div.className = "switcher-div"
+            div.style.cursor = "pointer"
+
+            const label = document.createElement("label")
+            label.className = "switch"
+
+            const checkbox = document.createElement("input")
+            checkbox.type = "checkbox"
+            checkbox.checked = checked
+
+            // checkbox.addEventListener("input", () => {
+            //     if (typeof action === "function") {
+            //         action(checkbox.checked)
+            //     }
+            // })
+
+            div.addEventListener("click", () => {
+                checkbox.checked = !checkbox.checked
+                if (typeof action === "function") {
+                    action(checkbox.checked)
+                }
+            })
+
+            function turnOn() {
+                checkbox.checked = true
+                if (typeof action === "function") {
+                    action(checkbox.checked)
+                }
+            }
+
+            function turnOff() {
+                checkbox.checked = false
+                if (typeof action === "function") {
+                    action(checkbox.checked)
+                }
+            }
+
+            const color = document.createElement("div")
+            color.style.width = "10px"
+            color.style.height = "10px"
+            color.style.backgroundColor = colorCircle
+            color.style.borderRadius = "10px"
+            color.style.border = "1px solid #2196f3"
+
+            const span = document.createElement("span")
+            span.className = "slider round"
+
+            const text = document.createElement("div")
+            text.innerText = labelText
+
+            label.appendChild(checkbox)
+            label.appendChild(span)
+
+            div.appendChild(label)
+            if (colorCircle) div.appendChild(color)
+            div.appendChild(text)
+
+            return { div, turnOn, turnOff }
+        }
+
+
+        function createObservableArray(callback) {
+            // Handler for the Proxy
+            const handler = {
+                // Intercepting the 'set' operation
+                set(target, property, value, receiver) {
+                    let result = Reflect.set(target, property, value, receiver);
+                    // Trigger the callback
+                    if (property === 'length' || !isNaN(property)) {
+                        callback(target);
+                    }
+                    return result;
+                },
+                // Intercepting the 'deleteProperty' operation
+                deleteProperty(target, property) {
+                    let result = Reflect.deleteProperty(target, property);
+                    // Trigger the callback
+                    callback(target);
+                    return result;
+                },
+            };
+            // Creating a Proxy around an empty array
+            return new Proxy([], handler);
+        }
+
+        function callback(target, property, value) {
+            console.log(`Array updated: target = ${target}, property = ${property}, value = ${value}`);
+            // propertyListDiv.innerHTML = target.map(p => {
+            //     return `${p}`
+            // }).join("</br>");
         };
 
-        // Create a Draw control with specified options
-        var draw = new MapboxDraw(drawOptions);
-        // Add the Draw control to your map
-        map.addControl(draw);
     </script>
+
 </body>
 
 </html>
