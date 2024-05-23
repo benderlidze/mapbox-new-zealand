@@ -197,6 +197,7 @@
     <div id="map"></div>
     <script>
 
+        let currentMode = "simple_select"
         const infoDiv = document.getElementById("info")
         const actionsListDiv = document.getElementById("actions")
 
@@ -232,9 +233,6 @@
         );
         map.addControl(new mapboxgl.NavigationControl());
 
-
-
-
         // Draw options
         var drawOptions = {
             displayControlsDefault: false,
@@ -252,7 +250,18 @@
             infoDiv.innerText = `Draw mode: ${event.mode}`
         });
 
+        map.on("draw.")
+
         map.on('draw.selectionchange', function (event) {
+
+
+            if (currentMode === "simple_select") {
+                //DISABLE DRAW When not in draw mode
+                Draw.changeMode('simple_select')
+                return;
+            }
+
+
             console.log('Selection changed:', event.features);
             //TODO refactor!!!!
             const selectedPolygon = Draw.getSelected().features[0]
@@ -479,6 +488,10 @@
                     return
                 }
 
+                console.log('currentMode', currentMode);
+                // if (Draw.getMode() !== "simple_select") return;
+                if (currentMode !== "simple_select") return;
+
                 const features = map.queryRenderedFeatures(e.point, { layers: ['landuse-data-fill'] });
                 if (!features.length) {
                     return;
@@ -533,6 +546,7 @@
             });
 
             map.on("click", "base-data", e => {
+
                 const features = map.queryRenderedFeatures(e.point, { layers: ['base-data'] });
                 if (!features.length) {
                     return;
@@ -592,8 +606,10 @@
 
         actionsListDiv.appendChild(buildActionButton({
             name: "Select your property", callback: () => {
+                Draw.changeMode(Draw.modes.SIMPLE_SELECT)
                 property.turnOn()
                 landUse.turnOff()
+                currentMode = "simple_select"
             }
         }))
         actionsListDiv.appendChild(buildActionButton({
@@ -602,12 +618,15 @@
                 landUse.turnOn()
                 //disable interactivity for landUse layer
                 Draw.changeMode('draw_polygon');
+                currentMode = "draw_polygon"
             }
         }))
         actionsListDiv.appendChild(buildActionButton({
             name: "View LU/Soils info", callback: () => {
                 property.turnOff()
                 landUse.turnOn()
+                currentMode = "simple_select"
+                Draw.changeMode('simple_select')
             }
         }))
 
