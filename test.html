@@ -653,8 +653,8 @@
         }))
         actionsListDiv.appendChild(buildActionButton({
             name: "View LU/Soils info", callback: () => {
-                property.turnOff()
-                landUse.turnOn()
+                // property.turnOff()
+                // landUse.turnOn()
                 currentMode = "simple_select"
                 Draw.changeMode('simple_select')
             }
@@ -747,6 +747,8 @@
                         Draw.getAll()
                     ))
                 }
+
+                Draw.changeMode(Draw.modes.SIMPLE_SELECT)
             })
 
             const loadButton = document.createElement("button")
