@@ -203,7 +203,9 @@
     <div id="map"></div>
     <script>
 
-        let lockPropertyFromClick = false
+        let lockPropertyFromClick = true //init
+        let landUseClickLock = true //init
+
         let currentMode = "simple_select"
         const infoDiv = document.getElementById("info")
         const actionsListDiv = document.getElementById("actions")
@@ -251,12 +253,18 @@
             userProperties: true,
         };
         var Draw = new MapboxDraw(drawOptions);
-        map.addControl(Draw, 'top-right');
+        const drawControll = map.addControl(Draw, 'top-right');
 
         // map.on('draw.modechange', function (event) {
         //     infoDiv.innerText = `Draw mode: ${event.mode}`
         // });
 
+        const drawControllVisible = (visible) => {
+            const display = visible ? "block" : "none"
+            document.getElementsByClassName('mapboxgl-ctrl-group')[1].style.display = display
+        }
+
+        drawControllVisible(false)
 
         let popup;
 
@@ -502,6 +510,9 @@
 
                 const drawMode = Draw.getMode()
                 console.log('drawMode', drawMode);
+
+                if (landUseClickLock) { return }
+
                 if (drawMode === "draw_polygon" || drawMode === "direct_select") {
                     return
                 }
@@ -599,17 +610,18 @@
 
 
         const divLock = document.createElement("div")
-        divLock.style = "display:flex; border:1px solid red;"
+        //divLock.style = "display:flex; border:1px solid red;"
         const property = buildSwitcher("Property", checked => {
             const display = checked ? "visible" : "none"
             map.setLayoutProperty('base-data', 'visibility', display);
         }, false, true)
+
         const lockProperty = buildSwitcher("Lock", checked => {
             lockPropertyFromClick = checked
-        }, false, false)
+        }, false, true)
 
         divLock.appendChild(property.div)
-        divLock.appendChild(lockProperty.div)
+        //divLock.appendChild(lockProperty.div)
         switchersEnableDiv.appendChild(divLock)
 
 
@@ -618,6 +630,11 @@
             map.setLayoutProperty('landuse-data', 'visibility', display);
             map.setLayoutProperty('landuse-data-fill', 'visibility', display);
         }, false, false)
+
+        const landUseLock = buildSwitcher("Lock", checked => {
+            landUseClickLock = checked
+        }, false, true)
+
         switchersEnableDiv.appendChild(landUse.div)
 
         const waterways = buildSwitcher("Waterways", checked => {
@@ -638,25 +655,31 @@
                 Draw.changeMode(Draw.modes.SIMPLE_SELECT)
                 lockProperty.turnOff()
                 property.turnOn()
-                landUse.turnOff()
+                //landUse.turnOff()
                 currentMode = "simple_select"
+                drawControllVisible(false)
+                landUseClickLock = true
             }
         }))
         actionsListDiv.appendChild(buildActionButton({
             name: "Map your Land Units", callback: () => {
                 lockProperty.turnOn()
                 property.turnOn()
-                landUse.turnOn()
+                //landUse.turnOn()
                 //disable interactivity for landUse layer
+                drawControllVisible(true)
                 currentMode = "draw_polygon"
             }
         }))
         actionsListDiv.appendChild(buildActionButton({
             name: "View LU/Soils info", callback: () => {
                 // property.turnOff()
-                // landUse.turnOn()
+                landUse.turnOn()
+                lockProperty.turnOn()
                 currentMode = "simple_select"
                 Draw.changeMode('simple_select')
+                drawControllVisible(false)
+                landUseClickLock = false
             }
         }))
 
@@ -749,6 +772,9 @@
                 }
 
                 Draw.changeMode(Draw.modes.SIMPLE_SELECT)
+                currentMode = "simple_select"
+                lockProperty.turnOn()
+                drawControllVisible(false)
             })
 
             const loadButton = document.createElement("button")
