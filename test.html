@@ -15,6 +15,19 @@
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
     <style>
+        .mapboxgl-ctrl-top-center {
+            top: 0;
+            left: 50%;
+            position: absolute;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .mapboxgl-ctrl-top-center .mapboxgl-ctrl {
+            margin: 10px 0 0 10px;
+        }
+
+
         body {
             margin: 0;
             padding: 0;
@@ -41,7 +54,7 @@
             background-color: white;
             border-radius: 10px;
             padding: 10px;
-
+            width: 200px;
         }
 
         #property {
@@ -153,11 +166,11 @@
 
         #actions {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             background-color: white;
             border-radius: 10px;
             padding: 10px;
-            gap: 10px
+            gap: 40px
         }
 
         #info {
@@ -168,7 +181,7 @@
             z-index: 1000;
 
             /* center screen */
-            top: 20px;
+            top: 60px;
             left: 50%;
             transform: translate(-50%, 0);
         }
@@ -177,6 +190,63 @@
             display: flex;
             gap: 2px;
             flex-direction: column;
+
+            background-color: white;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .main {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .top {
+            flex: 1;
+            position: relative;
+        }
+
+        .bottom {
+            height: 50px;
+            background-color: white;
+            margin: 10px;
+
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-content: center;
+            align-items: center;
+
+        }
+
+        .action-button {
+            border: 1px solid #969696;
+            padding: 5px 10px;
+            border-radius: 5px;
+
+        }
+
+        .center-bottom {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translate(-50%, 0);
+        }
+
+        #geocoder {
+            position: absolute;
+            top: 20px;
+            z-index: 1000;
+            left: 50%;
+            transform: translate(-50%, 0);
+        }
+
+        .flex-nowrap {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            flex-wrap: nowrap;
         }
     </style>
 </head>
@@ -189,18 +259,33 @@
         href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css"
         type="text/css">
 
-    <div id="info">Edit mode</div>
+    <div id="info"></div>
 
     <div id="panel">
         <div id="legend"></div>
-        <div id="actions"></div>
-        <div id="property">
-            <div id="list"></div>
-            <div id="property-controls"></div>
+        <div id="list"></div>
+    </div>
+
+    <div class="main">
+        <div class="top">
+            <div id="geocoder"></div>
+            <div id="map"></div>
+            <div class="center-bottom">
+                <div id="property">
+                    <div id="property-controls"></div>
+                </div>
+            </div>
+        </div>
+        <div class="bottom">
+            <div class="left">
+                <div id="actions"></div>
+            </div>
+            <div class="right">
+                <div id="load-polygons"></div>
+            </div>
         </div>
     </div>
 
-    <div id="map"></div>
     <script>
 
         let lockPropertyFromClick = true //init
@@ -209,16 +294,23 @@
         let currentMode = "simple_select"
         const infoDiv = document.getElementById("info")
         const actionsListDiv = document.getElementById("actions")
+        const loadPolygons = document.getElementById("load-polygons")
 
         const propertyListDiv = document.getElementById("list")
         const propertyControlsDiv = document.getElementById("property-controls")
 
         const switchersEnableDiv = document.getElementById("legend")
-        const soilClasses = ["RFM", "RFW", "UEP", "GOA", "LOV", "LOT", "ZOH", "ZOT", "BOA", "WT", "BOM", "RTB", "LOA", "LIM", "ROT", "ROW", "BOT", "MOBL", "GOT", "BAP", "WX", "ice", "rive", "BAT", "PXM", "BFT", "town", "PIT", "BLA", "UEM", "UYT", "WF", "MOZ", "ZPT", "WS", "RST", "NXT", "ZXP", "RTT", "LOVA", "BLT", "LGT", "MOT", "PPU", "MOI", "NOA", "BOP", "BXT", "XOT", "BAM", "ZDH", "NOM", "UPS", "estu", "BLAD", "BAO", "BST", "GAP", "GRQ", "PPJX", "OMA", "PID", "NOT", "ZPH", "PJM", "BLX", "lake", "BLD", "GRT", "GSC", "PIM", "GOE", "RFT", "PJT", "PPJ", "ERT", "LPT", "BFL", "BMT", "GUFQ", "UST", "EOJC", "MIW", "RFAW", "BFA", "BMG", "PXJN", "BOC", "WO", "BMM", "BSA", "AFST", "BOH", "SIT", "EMT", "SAT", "UEY", "GAT", "ZPZ", "UPT", "GUF", "EOM", "OHM", "PPX", "PLT", "EOJ", "UYM", "LIT", "OHA", "RTM", "PJA", "PJN", "SAH", "SJT", "PXMC", "GSO", "MOBA", "BSM", "GST", "BFM", "RSM", "ERW", "PXJ", "MOM", "BMA", "PXJM", "SJQ", "RXT", "OMM", "RTBP", "GOO", "EMG", "XPT", "ROA", "ZXF", "EOT", "ZXQ", "EOC", "BFMA", "ZXH", "WGFU", "UDP", "NXM", "XNT", "OFA", "PPT", "ROM", "PLM", "quar", "BFP", "ZPP", "ZGT", "NPT", "MOL", "RFA", "WST", "PXJC", "SAM", "OFS", "BFC", "ZXU", "BLM", "GOC", "ROAW", "ATT", "RFMA", "BFAL", "NPA", "GAO", "UDM", "SAW", "MOBT", "EPT", "GRA", "WH", "BOI", "MIM", "RTBL", "PUM", "EODC", "EVT", "SJM", "BOMA", "MPT", "NXA", "BLAM", "MIT", "RTBA", "WHA", "GRO", "ZPU", "PJC", "EVM", "PXT", "EMM", "ZPOZ", "RFMQ", "PPF", "GOM", "ERO", "GOP", "RF?", "WGF", "BSP", "SJL"]
+        // const soilClasses = ["RFM", "RFW", "UEP", "GOA", "LOV", "LOT", "ZOH", "ZOT", "BOA", "WT", "BOM", "RTB", "LOA", "LIM", "ROT", "ROW", "BOT", "MOBL", "GOT", "BAP", "WX", "ice", "rive", "BAT", "PXM", "BFT", "town", "PIT", "BLA", "UEM", "UYT", "WF", "MOZ", "ZPT", "WS", "RST", "NXT", "ZXP", "RTT", "LOVA", "BLT", "LGT", "MOT", "PPU", "MOI", "NOA", "BOP", "BXT", "XOT", "BAM", "ZDH", "NOM", "UPS", "estu", "BLAD", "BAO", "BST", "GAP", "GRQ", "PPJX", "OMA", "PID", "NOT", "ZPH", "PJM", "BLX", "lake", "BLD", "GRT", "GSC", "PIM", "GOE", "RFT", "PJT", "PPJ", "ERT", "LPT", "BFL", "BMT", "GUFQ", "UST", "EOJC", "MIW", "RFAW", "BFA", "BMG", "PXJN", "BOC", "WO", "BMM", "BSA", "AFST", "BOH", "SIT", "EMT", "SAT", "UEY", "GAT", "ZPZ", "UPT", "GUF", "EOM", "OHM", "PPX", "PLT", "EOJ", "UYM", "LIT", "OHA", "RTM", "PJA", "PJN", "SAH", "SJT", "PXMC", "GSO", "MOBA", "BSM", "GST", "BFM", "RSM", "ERW", "PXJ", "MOM", "BMA", "PXJM", "SJQ", "RXT", "OMM", "RTBP", "GOO", "EMG", "XPT", "ROA", "ZXF", "EOT", "ZXQ", "EOC", "BFMA", "ZXH", "WGFU", "UDP", "NXM", "XNT", "OFA", "PPT", "ROM", "PLM", "quar", "BFP", "ZPP", "ZGT", "NPT", "MOL", "RFA", "WST", "PXJC", "SAM", "OFS", "BFC", "ZXU", "BLM", "GOC", "ROAW", "ATT", "RFMA", "BFAL", "NPA", "GAO", "UDM", "SAW", "MOBT", "EPT", "GRA", "WH", "BOI", "MIM", "RTBL", "PUM", "EODC", "EVT", "SJM", "BOMA", "MPT", "NXA", "BLAM", "MIT", "RTBA", "WHA", "GRO", "ZPU", "PJC", "EVM", "PXT", "EMM", "ZPOZ", "RFMQ", "PPF", "GOM", "ERO", "GOP", "RF?", "WGF", "BSP", "SJL"]
+
+        const soilClasses = [
+            { id: 1, name: "steep country", color: "#FF0000" },
+            { id: 2, name: "medium to steep country", color: "#FFA500" },
+            { id: 3, name: "cultivable rolling country", color: "#800080" },
+            { id: 4, name: "River flats", color: "#0000FF" },
+        ]
 
         const selectedBasePolygons = createObservableArray(callback);
         const landUseColors = createObservableArray(() => {
-
         });
 
         mapboxgl.accessToken = 'pk.eyJ1Ijoib3VyZmFybXMiLCJhIjoiY2x3YWRhbW9nMGRsNjJxcHFwdW81emVhNSJ9.forvlRpP1nOZekrRDqBKjQ';
@@ -232,22 +324,25 @@
             projection: "mercator"
         });
         // Add the control to the map.
-        map.addControl(
-            new MapboxGeocoder({
-                accessToken: mapboxgl.accessToken,
-                mapboxgl: mapboxgl,
-                // Limit seach results to Australia.
-                countries: 'nz',
-            })
-        );
         map.addControl(new mapboxgl.NavigationControl());
+
+        // Add the control to the map.
+        const geocoder = new MapboxGeocoder({
+            accessToken: mapboxgl.accessToken,
+            mapboxgl: mapboxgl,
+            // Limit seach results to Australia.
+            countries: 'nz',
+            //placeholder 
+            placeholder: 'Search address',
+        })
+        document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
 
         // Draw options
         var drawOptions = {
             displayControlsDefault: false,
             controls: {
                 polygon: true,
-                point: true,
+                point: false,
                 trash: true
             },
             userProperties: true,
@@ -291,13 +386,6 @@
                 })
                     .setLngLat(center)
                     .addTo(map);
-
-                const soilClasses = [
-                    { id: 1, name: "steep country", color: "#FF0000" },
-                    { id: 2, name: "medium to steep country", color: "#FFA500" },
-                    { id: 3, name: "cultivable rolling country", color: "#800080" },
-                    { id: 4, name: "River flats", color: "#0000FF" },
-                ]
 
                 console.log('Creating element');
                 const dropDown = document.createElement("select")
@@ -606,6 +694,8 @@
             })
             loadPropertyControls()
 
+            buildLoadPolygonsButton()
+
         });
 
 
@@ -643,11 +733,11 @@
         }, false, false)
         switchersEnableDiv.appendChild(waterways.div)
 
-        const soil = buildSwitcher("Soil", checked => {
-            const display = checked ? "visible" : "none"
-            map.setLayoutProperty('soil-data', 'visibility', display);
-        }, false, false)
-        switchersEnableDiv.appendChild(soil.div)
+        // const soil = buildSwitcher("Soil", checked => {
+        //     const display = checked ? "visible" : "none"
+        //     map.setLayoutProperty('soil-data', 'visibility', display);
+        // }, false, false)
+        // switchersEnableDiv.appendChild(soil.div)
 
 
         actionsListDiv.appendChild(buildActionButton({
@@ -659,6 +749,8 @@
                 currentMode = "simple_select"
                 drawControllVisible(false)
                 landUseClickLock = true
+
+                changeCursor("pointer")
             }
         }))
         actionsListDiv.appendChild(buildActionButton({
@@ -668,6 +760,9 @@
                 //landUse.turnOn()
                 //disable interactivity for landUse layer
                 drawControllVisible(true)
+
+                changeCursor("")
+                Draw.changeMode('draw_polygon')
                 currentMode = "draw_polygon"
             }
         }))
@@ -680,9 +775,31 @@
                 Draw.changeMode('simple_select')
                 drawControllVisible(false)
                 landUseClickLock = false
+
+                changeCursor("pointer")
             }
         }))
 
+        function changeCursor(cursorType) {
+            map.getCanvas().style.cursor = cursorType;
+        }
+
+        function buildLoadPolygonsButton() {
+
+            const loadButton = document.createElement("button")
+            loadButton.innerText = "Load"
+            loadButton.addEventListener("click", () => {
+                const appPolygonsData = localStorage.getItem('appPolygonsData')
+                if (appPolygonsData) {
+                    const polygonsArray = JSON.parse(appPolygonsData)
+                    console.log('polygonsArray', polygonsArray);
+                    Draw.add(polygonsArray)
+                    updatePolygonInfoTab()
+                }
+            })
+
+            loadPolygons.appendChild(loadButton)
+        }
 
         function updatePolygonInfoTab() {
 
@@ -691,10 +808,14 @@
             const polygons = Draw.getAll().features
             polygons.forEach(poly => {
 
+                const area = turf.area(poly)
+                if (area <= 0) return;//skip empty polygons
+
                 const div = document.createElement("div")
                 div.style.display = "flex"
                 div.style.alignItems = "center"
-                div.style.gap = "5px"
+                div.style.gap = "15px"
+                div.style.justifyContent = "space-between"
 
 
                 const color = document.createElement("div")
@@ -703,17 +824,52 @@
                 color.style.height = "20px"
                 color.style.borderRadius = "20px"
 
-
                 const text = document.createElement("span")
                 text.innerText = poly.properties.name
 
-                const area = document.createElement("span")
-                area.innerText = polyArea(poly)
+                const areaDiv = document.createElement("span")
+                areaDiv.innerText = polyArea(poly)
 
-                div.appendChild(color)
-                div.appendChild(text)
-                div.appendChild(area)
+                const deleteButton = document.createElement("div")
+                deleteButton.style.cursor = "pointer"
+                const deleteIcon = document.createElement("img")
+                deleteIcon.src = "icons/rubbish-bin-svgrepo-com.svg"
+                deleteIcon.style.width = "20px"
+                deleteIcon.style.height = "20px"
+                deleteButton.addEventListener("click", () => {
+                    Draw.delete(poly.id)
+                    updatePolygonInfoTab()
+                })
+                deleteButton.appendChild(deleteIcon)
 
+
+                const editButton = document.createElement("div")
+                editButton.style.cursor = "pointer"
+                const editIcon = document.createElement("img")
+                editIcon.src = "icons/edit-3-svgrepo-com.svg"
+                editIcon.style.width = "20px"
+                editIcon.style.height = "20px"
+                editIcon.addEventListener("click", () => {
+                    Draw.changeMode('direct_select', { featureId: poly.id });
+                    currentMode = "direct_select"
+                    drawControllVisible(true)
+                    landUseClickLock = true
+                })
+                editButton.appendChild(editIcon)
+
+                const left = document.createElement("div")
+                left.className = "flex-nowrap"
+                left.appendChild(color)
+                left.appendChild(text)
+                left.appendChild(areaDiv)
+
+                const right = document.createElement("div")
+                right.className = "flex-nowrap"
+                right.appendChild(editButton)
+                right.appendChild(deleteButton)
+
+                div.appendChild(left)
+                div.appendChild(right)
 
                 propertyListDiv.appendChild(div)
             })
@@ -762,7 +918,7 @@
         function loadPropertyControls() {
 
             const saveButton = document.createElement("button")
-            saveButton.innerText = "Save"
+            saveButton.innerText = "Save & Close"
             saveButton.addEventListener("click", () => {
 
                 if (selectedBasePolygons) {
@@ -778,33 +934,24 @@
                 landUseClickLock = true
             })
 
-            const loadButton = document.createElement("button")
-            loadButton.innerText = "Load"
-            loadButton.addEventListener("click", () => {
-                const appPolygonsData = localStorage.getItem('appPolygonsData')
-                if (appPolygonsData) {
-                    const polygonsArray = JSON.parse(appPolygonsData)
-                    console.log('polygonsArray', polygonsArray);
-                    Draw.add(polygonsArray)
-                    updatePolygonInfoTab()
-                    // if (polygonsArray.selectedBasePolygons) {
-                    //     selectedBasePolygons.length = 0
-                    //     selectedBasePolygons.push(...polygonsArray.selectedBasePolygons)
-                    //     map.setPaintProperty('base-data', 'fill-opacity', [
-                    //         'case',
-                    //         ['in', ['get', 'id'], ['literal', selectedBasePolygons]],
-                    //         0,
-                    //         0.5
-                    //     ]);
-                    // }
-                }
-            })
+            // const loadButton = document.createElement("button")
+            // loadButton.innerText = "Load"
+            // loadButton.addEventListener("click", () => {
+            //     const appPolygonsData = localStorage.getItem('appPolygonsData')
+            //     if (appPolygonsData) {
+            //         const polygonsArray = JSON.parse(appPolygonsData)
+            //         console.log('polygonsArray', polygonsArray);
+            //         Draw.add(polygonsArray)
+            //         updatePolygonInfoTab()
+            //     }
+            // })
             propertyControlsDiv.appendChild(saveButton)
-            propertyControlsDiv.appendChild(loadButton)
+            // propertyControlsDiv.appendChild(loadButton)
         }
 
         function buildActionButton({ name, callback }) {
             const div = document.createElement("div")
+            div.className = "action-button"
             div.style.display = "flex"
             div.style.alignItems = "center"
             div.style.cursor = "pointer"

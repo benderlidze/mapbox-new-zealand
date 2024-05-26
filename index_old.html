@@ -172,12 +172,6 @@
             left: 50%;
             transform: translate(-50%, 0);
         }
-
-        #list {
-            display: flex;
-            gap: 2px;
-            flex-direction: column;
-        }
     </style>
 </head>
 
@@ -203,9 +197,7 @@
     <div id="map"></div>
     <script>
 
-        let lockPropertyFromClick = true //init
-        let landUseClickLock = true //init
-
+        let lockPropertyFromClick = false
         let currentMode = "simple_select"
         const infoDiv = document.getElementById("info")
         const actionsListDiv = document.getElementById("actions")
@@ -253,40 +245,29 @@
             userProperties: true,
         };
         var Draw = new MapboxDraw(drawOptions);
-        const drawControll = map.addControl(Draw, 'top-right');
+        map.addControl(Draw, 'top-right');
 
-        // map.on('draw.modechange', function (event) {
-        //     infoDiv.innerText = `Draw mode: ${event.mode}`
-        // });
+        map.on('draw.modechange', function (event) {
+            infoDiv.innerText = `Draw mode: ${event.mode}`
+        });
 
-        const drawControllVisible = (visible) => {
-            const display = visible ? "block" : "none"
-            document.getElementsByClassName('mapboxgl-ctrl-group')[1].style.display = display
-        }
-
-        drawControllVisible(false)
-
-        let popup;
 
         map.on('draw.selectionchange', function (event) {
 
-            updatePolygonInfoTab()
 
-            popup && popup.remove()
             if (currentMode === "simple_select") {
                 //DISABLE DRAW When not in draw mode
                 Draw.changeMode('simple_select')
                 return;
             }
 
-            infoDiv.innerHTML = ""
+
+            console.log('Selection changed:', event.features);
+            //TODO refactor!!!!
             const selectedPolygon = Draw.getSelected().features[0]
-
-            if (!selectedPolygon) return;
-
             if (selectedPolygon) {
                 const center = turf.centerOfMass(selectedPolygon).geometry.coordinates
-                popup = new mapboxgl.Popup({
+                const popup = new mapboxgl.Popup({
                     offset: [0, -15],
                 })
                     .setLngLat(center)
@@ -320,27 +301,17 @@
                         Draw.setFeatureProperty(polyId, 'name', name)
 
                         // console.log('123', 123);
+
                         popup.remove()
                         Draw.changeMode('simple_select')
                         Draw.changeMode('direct_select', { featureId: polyId });
                     }
                 })
 
-                infoDiv.appendChild(dropDown)
-
-                const areaText = document.createElement("div")
-                areaText.innerText = polyArea(selectedPolygon)
-                infoDiv.appendChild(areaText)
+                popup.setDOMContent(dropDown)
 
             }
-
         });
-
-        function polyArea(polygon) {
-            const areaInSquareMeters = turf.area(polygon)
-            const areaInHectares = areaInSquareMeters / 10000;
-            return `Area: ${areaInHectares.toFixed(2)} ha`
-        }
 
         map.on('load', () => {
 
@@ -506,13 +477,13 @@
                 },
             );
 
+
+
+
             map.on('click', 'landuse-data-fill', (e) => {
 
                 const drawMode = Draw.getMode()
                 console.log('drawMode', drawMode);
-
-                if (landUseClickLock) { return }
-
                 if (drawMode === "draw_polygon" || drawMode === "direct_select") {
                     return
                 }
@@ -600,9 +571,9 @@
                     0.5
                 ]);
 
-                // propertyListDiv.innerHTML = selectedBasePolygons.map(p => {
-                //     return `${p}`
-                // }).join("</br>")
+                propertyListDiv.innerHTML = selectedBasePolygons.map(p => {
+                    return `${p}`
+                }).join("</br>")
             })
             loadPropertyControls()
 
@@ -610,18 +581,17 @@
 
 
         const divLock = document.createElement("div")
-        //divLock.style = "display:flex; border:1px solid red;"
+        divLock.style = "display:flex; border:1px solid red;"
         const property = buildSwitcher("Property", checked => {
             const display = checked ? "visible" : "none"
             map.setLayoutProperty('base-data', 'visibility', display);
         }, false, true)
-
         const lockProperty = buildSwitcher("Lock", checked => {
             lockPropertyFromClick = checked
-        }, false, true)
+        }, false, false)
 
         divLock.appendChild(property.div)
-        //divLock.appendChild(lockProperty.div)
+        divLock.appendChild(lockProperty.div)
         switchersEnableDiv.appendChild(divLock)
 
 
@@ -630,11 +600,6 @@
             map.setLayoutProperty('landuse-data', 'visibility', display);
             map.setLayoutProperty('landuse-data-fill', 'visibility', display);
         }, false, false)
-
-        const landUseLock = buildSwitcher("Lock", checked => {
-            landUseClickLock = checked
-        }, false, true)
-
         switchersEnableDiv.appendChild(landUse.div)
 
         const waterways = buildSwitcher("Waterways", checked => {
@@ -650,76 +615,32 @@
         switchersEnableDiv.appendChild(soil.div)
 
 
+
         actionsListDiv.appendChild(buildActionButton({
             name: "Select your property", callback: () => {
                 Draw.changeMode(Draw.modes.SIMPLE_SELECT)
-                lockProperty.turnOff()
                 property.turnOn()
-                //landUse.turnOff()
+                landUse.turnOff()
                 currentMode = "simple_select"
-                drawControllVisible(false)
-                landUseClickLock = true
             }
         }))
         actionsListDiv.appendChild(buildActionButton({
             name: "Map your Land Units", callback: () => {
-                lockProperty.turnOn()
-                property.turnOn()
-                //landUse.turnOn()
+                property.turnOff()
+                landUse.turnOn()
                 //disable interactivity for landUse layer
-                drawControllVisible(true)
+                Draw.changeMode('draw_polygon');
                 currentMode = "draw_polygon"
             }
         }))
         actionsListDiv.appendChild(buildActionButton({
             name: "View LU/Soils info", callback: () => {
-                // property.turnOff()
+                property.turnOff()
                 landUse.turnOn()
-                lockProperty.turnOn()
                 currentMode = "simple_select"
                 Draw.changeMode('simple_select')
-                drawControllVisible(false)
-                landUseClickLock = false
             }
         }))
-
-
-        function updatePolygonInfoTab() {
-
-            propertyListDiv.innerHTML = ""
-
-            const polygons = Draw.getAll().features
-            polygons.forEach(poly => {
-
-                const div = document.createElement("div")
-                div.style.display = "flex"
-                div.style.alignItems = "center"
-                div.style.gap = "5px"
-
-
-                const color = document.createElement("div")
-                color.style.backgroundColor = poly.properties.color
-                color.style.width = "20px"
-                color.style.height = "20px"
-                color.style.borderRadius = "20px"
-
-
-                const text = document.createElement("span")
-                text.innerText = poly.properties.name
-
-                const area = document.createElement("span")
-                area.innerText = polyArea(poly)
-
-                div.appendChild(color)
-                div.appendChild(text)
-                div.appendChild(area)
-
-
-                propertyListDiv.appendChild(div)
-            })
-
-
-        }
 
 
         function updateLandUseColorsLayer(selectedId) {
@@ -766,16 +687,11 @@
             saveButton.addEventListener("click", () => {
 
                 if (selectedBasePolygons) {
-                    localStorage.setItem('appPolygonsData', JSON.stringify(
-                        Draw.getAll()
-                    ))
+                    localStorage.setItem('appPolygonsData', JSON.stringify({
+                        selectedBasePolygons,
+                        bbox: ""
+                    }))
                 }
-
-                Draw.changeMode(Draw.modes.SIMPLE_SELECT)
-                currentMode = "simple_select"
-                lockProperty.turnOn()
-                drawControllVisible(false)
-                landUseClickLock = true
             })
 
             const loadButton = document.createElement("button")
@@ -785,18 +701,17 @@
                 if (appPolygonsData) {
                     const polygonsArray = JSON.parse(appPolygonsData)
                     console.log('polygonsArray', polygonsArray);
-                    Draw.add(polygonsArray)
-                    updatePolygonInfoTab()
-                    // if (polygonsArray.selectedBasePolygons) {
-                    //     selectedBasePolygons.length = 0
-                    //     selectedBasePolygons.push(...polygonsArray.selectedBasePolygons)
-                    //     map.setPaintProperty('base-data', 'fill-opacity', [
-                    //         'case',
-                    //         ['in', ['get', 'id'], ['literal', selectedBasePolygons]],
-                    //         0,
-                    //         0.5
-                    //     ]);
-                    // }
+
+                    if (polygonsArray.selectedBasePolygons) {
+                        selectedBasePolygons.length = 0
+                        selectedBasePolygons.push(...polygonsArray.selectedBasePolygons)
+                        map.setPaintProperty('base-data', 'fill-opacity', [
+                            'case',
+                            ['in', ['get', 'id'], ['literal', selectedBasePolygons]],
+                            0,
+                            0.5
+                        ]);
+                    }
                 }
             })
             propertyControlsDiv.appendChild(saveButton)
@@ -920,9 +835,9 @@
 
         function callback(target, property, value) {
             console.log(`Array updated: target = ${target}, property = ${property}, value = ${value}`);
-            // propertyListDiv.innerHTML = target.map(p => {
-            //     return `${p}`
-            // }).join("</br>");
+            propertyListDiv.innerHTML = target.map(p => {
+                return `${p}`
+            }).join("</br>");
         };
 
     </script>
