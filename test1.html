@@ -248,6 +248,16 @@
             gap: 10px;
             flex-wrap: nowrap;
         }
+
+        #farm-features-list {
+            background-color: white;
+            padding: 10px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+
+        }
     </style>
 </head>
 
@@ -311,9 +321,35 @@
             { id: 4, name: "River flats", color: "#0000FF" },
         ]
 
+        const farmFeaturesNames = [
+            "Agrichemical Storage",
+            "Animal Health Storage",
+            "Washdown Area",
+            "Fuel Storage",
+            "Fertiliser Bin",
+            "Effluent Pond",
+            "Airstrip",
+            "Woolshed",
+            "Sheep Yards",
+            "Cattle Yards",
+            "Water take ",
+            "Irrigation",
+            "Bridge",
+            "Consented Culvert",
+            "Feed Pad & Feed Lot",
+            "Surface Water Intake",
+            "Bore",
+            "Farm Dump",
+            "Offal Hole",
+            "Old Sheep dip",
+            "Private Drinking Water Outlet",
+        ]
+
         const selectedBasePolygons = createObservableArray(callback);
         const landUseColors = createObservableArray(() => {
         });
+
+        const drawPontLayers = ["gl-draw-point-point-stroke-inactive.cold", "gl-draw-point-inactive.cold", "gl-draw-point-stroke-active.cold", "gl-draw-point-active.cold", "gl-draw-point-static.cold", "gl-draw-point-point-stroke-inactive.hot", "gl-draw-point-inactive.hot", "gl-draw-point-stroke-active.hot", "gl-draw-point-active.hot", "gl-draw-point-static.hot"]
 
         mapboxgl.accessToken = 'pk.eyJ1Ijoib3VyZmFybXMiLCJhIjoiY2x3YWRhbW9nMGRsNjJxcHFwdW81emVhNSJ9.forvlRpP1nOZekrRDqBKjQ';
         const map = new mapboxgl.Map({
@@ -603,6 +639,140 @@
                 },
             );
 
+            map.addSource('farm-features', {
+                'type': 'geojson',
+                'data': {
+                    'type': 'FeatureCollection',
+                    'features': [
+                        {
+                            'type': 'Feature',
+                            'properties': {
+                                'name': 'Agrichemical Storage',
+                            },
+                            'geometry': {
+                                'type': 'Point',
+                                'coordinates': [174.95943864902665, -37.70716520232802]
+                            }
+                        },
+                    ]
+                }
+            });
+            // map.addLayer(
+            //     {
+            //         'id': 'farm-features',
+            //         'type': 'circle',
+            //         'source': 'farm-features',
+            //         'layout': {
+            //             'visibility': "none",
+            //         },
+            //         'paint': {
+            //             'circle-radius': 6,
+            //             'circle-color': 'red',
+            //             'circle-stroke-color': 'white',
+            //             'circle-stroke-width': 2
+            //         },
+            //         'filter': ['==', '$type', 'Point']
+            //     },
+            // );
+            // map.addLayer(
+            //     {
+            //         'id': 'farm-features-text',
+            //         'type': 'symbol',
+            //         'source': 'farm-features',
+            //         'layout': {
+            //             'visibility': "none",
+            //             'text-field': `{user_name}`,
+            //             'text-font': [
+            //                 'Open Sans Bold',
+            //                 'Arial Unicode MS Bold'
+            //             ],
+            //             'text-size': 13,
+            //             'text-letter-spacing': 0.05,
+            //             'text-variable-anchor': ['left'],
+            //             'text-radial-offset': 0.5,
+            //             'text-max-width': 1000,
+            //             'text-allow-overlap': true,
+            //         },
+            //         'paint': {
+            //             'text-color': 'white',
+            //             'text-halo-color': 'black',
+            //             'text-halo-width': 1
+            //         },
+            //     },
+            // );
+
+
+
+            map.addLayer(
+                {
+                    'id': 'draw-farm-features-text',
+                    'type': 'symbol',
+                    'source': 'mapbox-gl-draw-cold',
+                    'layout': {
+                        'visibility': "none",
+                        'text-field': `{user_name}`,
+                        'text-font': [
+                            'Open Sans Bold',
+                            'Arial Unicode MS Bold'
+                        ],
+                        'text-size': 13,
+                        'text-letter-spacing': 0.05,
+                        'text-variable-anchor': ['left'],
+                        'text-radial-offset': 0.5,
+                        'text-max-width': 1000,
+                        'text-allow-overlap': true,
+                    },
+                    'paint': {
+                        'text-color': 'white',
+                        'text-halo-color': 'black',
+                        'text-halo-width': 1
+                    },
+                    filter: ['==', '$type', 'Point']
+                },
+            );
+            map.addLayer(
+                {
+                    'id': 'draw-farm-features-text-hot',
+                    'type': 'symbol',
+                    'source': 'mapbox-gl-draw-hot',
+                    'layout': {
+                        'visibility': "none",
+                        'text-field': `{user_name}`,
+                        'text-font': [
+                            'Open Sans Bold',
+                            'Arial Unicode MS Bold'
+                        ],
+                        'text-size': 13,
+                        'text-letter-spacing': 0.05,
+                        'text-variable-anchor': ['left'],
+                        'text-radial-offset': 0.5,
+                        'text-max-width': 1000,
+                        'text-allow-overlap': true,
+                    },
+                    'paint': {
+                        'text-color': 'white',
+                        'text-halo-color': 'black',
+                        'text-halo-width': 1
+                    },
+                    filter: ['==', '$type', 'Point']
+                },
+            );
+
+
+            map.on("click", "farm-features", e => {
+                const features = map.queryRenderedFeatures(e.point, { layers: ['farm-features'] });
+                if (!features.length) {
+                    return;
+                }
+
+                console.log('click', features);
+                //move with Draw 
+
+
+                Draw.add(features[0])
+            })
+
+
             map.on('click', 'landuse-data-fill', (e) => {
 
                 const drawMode = Draw.getMode()
@@ -702,9 +872,12 @@
                 // }).join("</br>")
             })
             loadPropertyControls()
-
             buildLoadPolygonsButton()
 
+
+            drawPontLayers.forEach(layer => {
+                map.setLayoutProperty(layer, 'visibility', 'none')
+            })
         });
 
 
@@ -741,6 +914,20 @@
             map.setLayoutProperty('waterways-data', 'visibility', display);
         }, false, false)
         switchersEnableDiv.appendChild(waterways.div)
+
+
+
+
+
+        const farmFeatures = buildSwitcher("Farm Features", checked => {
+            const display = checked ? "visible" : "none"
+            drawPontLayers.forEach(layer => {
+                map.setLayoutProperty(layer, 'visibility', display)
+            })
+            map.setLayoutProperty('draw-farm-features-text', 'visibility', display);
+            map.setLayoutProperty('draw-farm-features-text-hot', 'visibility', display);
+        }, false, false)
+        switchersEnableDiv.appendChild(farmFeatures.div)
 
         // const soil = buildSwitcher("Soil", checked => {
         //     const display = checked ? "visible" : "none"
@@ -792,6 +979,7 @@
         actionsListDiv.appendChild(buildActionButton({
             name: "Map Farm Features", callback: () => {
                 //Draw.changeMode(Draw.modes.DRAW_POINT)
+                farmFeatures.turnOn()
             }
         }))
 
@@ -1055,6 +1243,95 @@
             return { div, turnOn, turnOff }
         }
 
+        createFarmFeaturesList()
+        function createFarmFeaturesList() {
+            farmFeaturesNames.forEach(item => {
+                const div = document.createElement("div")
+                div.style.display = "flex"
+                div.style.alignItems = "center"
+                div.style.border = "1px solid #ccc"
+                div.style.borderRadius = "5px"
+                div.style.padding = "5px"
+                div.style.cursor = "pointer"
+                div.style.userSelect = "none"
+                const text = document.createElement("span")
+                text.innerText = ' + ' + item
+                div.appendChild(text)
+
+                div.addEventListener("click", () => {
+
+                    Draw.changeMode(Draw.modes.DRAW_POINT)
+
+                    map.once('draw.create', function (e) {
+                        //draw get last id 
+                        const id = e.features[0].id
+                        console.log('id', id);
+                        Draw.setFeatureProperty(id, "name", item)
+                    })
+
+                    //cursor 
+                    // changeCursor("crosshair")
+                    // map.once('click',
+                    //     function (e) {
+                    //         const coordinates = e.lngLat
+                    //         const feature = {
+                    //             'type': 'Feature',
+                    //             'properties': {
+                    //                 'user_name': item,
+                    //             },
+                    //             'geometry': {
+                    //                 'type': 'Point',
+                    //                 'coordinates': [coordinates.lng, coordinates.lat]
+                    //             }
+                    //         }
+                    //         map.getSource('farm-features').setData({
+                    //             'type': 'FeatureCollection',
+                    //             'features': [
+                    //                 ...map.getSource('farm-features')._data.features,
+                    //                 feature
+                    //             ]
+                    //         })
+                    //         changeCursor("pointer")
+                    //     }
+                    // )
+
+                    // map.once('draw.create', function (e) {
+                    //     //draw get last id 
+                    //     const id = e.features[0].id
+                    //     console.log('id', id);
+                    //     Draw.setFeatureProperty(id, "name", item)
+                    // })
+
+                    // map.once('draw.create', function (e) {
+                    //     const coordinates = e.features[0].geometry.coordinates
+                    //     const feature = {
+                    //         'type': 'Feature',
+                    //         'properties': {
+                    //             'name': item,
+                    //         },
+                    //         'geometry': {
+                    //             'type': 'Point',
+                    //             'coordinates': coordinates
+                    //         }
+                    //     }
+                    //     map.getSource('farm-features').setData({
+                    //         'type': 'FeatureCollection',
+                    //         'features': [
+                    //             ...map.getSource('farm-features')._data.features,
+                    //             feature
+                    //         ]
+                    //     })
+                    //     Draw.changeMode('simple_select')
+                    //     //Draw delete last point
+                    //     Draw.delete(e.features[0].id)
+
+                    //     currentMode = "simple_select"
+                    // });
+
+                })
+                farmFeaturesListDiv.appendChild(div)
+            })
+        }
 
         function createObservableArray(callback) {
             // Handler for the Proxy
