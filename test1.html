@@ -256,7 +256,7 @@
             display: flex;
             flex-direction: column;
             gap: 5px;
-
+            width: 230px;
         }
     </style>
 </head>
@@ -308,6 +308,8 @@
         const loadPolygons = document.getElementById("load-polygons")
 
         const farmFeaturesListDiv = document.getElementById("farm-features-list")
+        farmFeaturesListDiv.style.display = "none"
+
         const propertyListDiv = document.getElementById("list")
         const propertyControlsDiv = document.getElementById("property-controls")
 
@@ -980,6 +982,7 @@
             name: "Map Farm Features", callback: () => {
                 //Draw.changeMode(Draw.modes.DRAW_POINT)
                 farmFeatures.turnOn()
+                farmFeaturesListDiv.style.display = "flex"
             }
         }))
 
@@ -1135,6 +1138,8 @@
                 lockProperty.turnOn()
                 drawControllVisible(false)
                 landUseClickLock = true
+
+                farmFeaturesListDiv.style.display = "none"
             })
 
             // const loadButton = document.createElement("button")
