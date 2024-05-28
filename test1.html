@@ -258,6 +258,80 @@
             gap: 5px;
             width: 230px;
         }
+
+
+
+        #modal-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: fit-content;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            margin: 0;
+        }
+
+        .modal-content {
+            font-size: 16px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 5px;
+        }
+
+        .modal-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+            flex: 1;
+        }
+
+        .modal-button:hover {
+            background: #0056b3;
+        }
+
+        .modal-button.cancel {
+            background: #6c757d;
+        }
+
+        .modal-button.cancel:hover {
+            background: #5a6268;
+        }
     </style>
 </head>
 
@@ -270,7 +344,6 @@
         type="text/css">
 
     <div id="info"></div>
-
     <div id="panel">
         <div id="legend"></div>
         <div id="list"></div>
@@ -296,6 +369,7 @@
             </div>
         </div>
     </div>
+    <div id="modal-container"></div>
 
     <script>
 
@@ -312,6 +386,8 @@
 
         const propertyListDiv = document.getElementById("list")
         const propertyControlsDiv = document.getElementById("property-controls")
+        const saveAndLoadDiv = document.getElementById("property")
+        saveAndLoadDiv.style.display = "none"
 
         const switchersEnableDiv = document.getElementById("legend")
         // const soilClasses = ["RFM", "RFW", "UEP", "GOA", "LOV", "LOT", "ZOH", "ZOT", "BOA", "WT", "BOM", "RTB", "LOA", "LIM", "ROT", "ROW", "BOT", "MOBL", "GOT", "BAP", "WX", "ice", "rive", "BAT", "PXM", "BFT", "town", "PIT", "BLA", "UEM", "UYT", "WF", "MOZ", "ZPT", "WS", "RST", "NXT", "ZXP", "RTT", "LOVA", "BLT", "LGT", "MOT", "PPU", "MOI", "NOA", "BOP", "BXT", "XOT", "BAM", "ZDH", "NOM", "UPS", "estu", "BLAD", "BAO", "BST", "GAP", "GRQ", "PPJX", "OMA", "PID", "NOT", "ZPH", "PJM", "BLX", "lake", "BLD", "GRT", "GSC", "PIM", "GOE", "RFT", "PJT", "PPJ", "ERT", "LPT", "BFL", "BMT", "GUFQ", "UST", "EOJC", "MIW", "RFAW", "BFA", "BMG", "PXJN", "BOC", "WO", "BMM", "BSA", "AFST", "BOH", "SIT", "EMT", "SAT", "UEY", "GAT", "ZPZ", "UPT", "GUF", "EOM", "OHM", "PPX", "PLT", "EOJ", "UYM", "LIT", "OHA", "RTM", "PJA", "PJN", "SAH", "SJT", "PXMC", "GSO", "MOBA", "BSM", "GST", "BFM", "RSM", "ERW", "PXJ", "MOM", "BMA", "PXJM", "SJQ", "RXT", "OMM", "RTBP", "GOO", "EMG", "XPT", "ROA", "ZXF", "EOT", "ZXQ", "EOC", "BFMA", "ZXH", "WGFU", "UDP", "NXM", "XNT", "OFA", "PPT", "ROM", "PLM", "quar", "BFP", "ZPP", "ZGT", "NPT", "MOL", "RFA", "WST", "PXJC", "SAM", "OFS", "BFC", "ZXU", "BLM", "GOC", "ROAW", "ATT", "RFMA", "BFAL", "NPA", "GAO", "UDM", "SAW", "MOBT", "EPT", "GRA", "WH", "BOI", "MIM", "RTBL", "PUM", "EODC", "EVT", "SJM", "BOMA", "MPT", "NXA", "BLAM", "MIT", "RTBA", "WHA", "GRO", "ZPU", "PJC", "EVM", "PXT", "EMM", "ZPOZ", "RFMQ", "PPF", "GOM", "ERO", "GOP", "RF?", "WGF", "BSP", "SJL"]
@@ -429,13 +505,11 @@
 
                 console.log('Creating element');
                 const dropDown = document.createElement("select")
-
                 dropDown.innerHTML = `
                     <option selected disabled value="">Select option</option>`
                     + soilClasses.map(item => {
                         return `<option value="${item.id}">${item.name}</option>`
                     }).join("")
-
                 dropDown.addEventListener("change", (e) => {
                     const id = e.target.value
                     const data = soilClasses.find(item => item.id === parseInt(id))
@@ -443,10 +517,8 @@
                         const { color, name } = data
                         const polyId = Draw.getSelectedIds()[0]
                         if (!polyId) return
-
                         Draw.setFeatureProperty(polyId, 'color', color)
                         Draw.setFeatureProperty(polyId, 'name', name)
-
                         // console.log('123', 123);
                         popup.remove()
                         Draw.changeMode('simple_select')
@@ -462,8 +534,19 @@
 
 
                 const selectCustomColor = document.createElement("div")
-                selectCustomColor.style.cursor = "pointer"
+                selectCustomColor.style = "cursor:pointer; border:1px solid gray; padding:5px; margin-top:5px; border-radius:5px; text-align:center;"
                 selectCustomColor.textContent = "Add option"
+
+                selectCustomColor.addEventListener("click", () => {
+                    showModal("Set custom option", () => {
+                        //rebuild/update the drop down container with new custom value
+                        dropDown.innerHTML = `
+                            <option selected disabled value="">Select option</option>`
+                            + soilClasses.map(item => {
+                                return `<option value="${item.id}">${item.name}</option>`
+                            }).join("")
+                    })
+                })
 
                 infoDiv.appendChild(selectCustomColor)
 
@@ -962,6 +1045,8 @@
                 changeCursor("")
                 Draw.changeMode('draw_polygon')
                 currentMode = "draw_polygon"
+
+                saveAndLoadDiv.style.display = "flex"
             }
         }))
         actionsListDiv.appendChild(buildActionButton({
@@ -983,6 +1068,7 @@
                 //Draw.changeMode(Draw.modes.DRAW_POINT)
                 farmFeatures.turnOn()
                 farmFeaturesListDiv.style.display = "flex"
+                saveAndLoadDiv.style.display = "flex"
             }
         }))
 
@@ -1045,6 +1131,8 @@
                 deleteButton.addEventListener("click", () => {
                     Draw.delete(poly.id)
                     updatePolygonInfoTab()
+
+                    saveAndLoadDiv.style.display = "flex"
                 })
                 deleteButton.appendChild(deleteIcon)
 
@@ -1060,6 +1148,8 @@
                     currentMode = "direct_select"
                     drawControllVisible(true)
                     landUseClickLock = true
+
+                    saveAndLoadDiv.style.display = "flex"
                 })
                 editButton.appendChild(editIcon)
 
@@ -1140,6 +1230,9 @@
                 landUseClickLock = true
 
                 farmFeaturesListDiv.style.display = "none"
+
+
+                saveAndLoadDiv.style.display = "none"
             })
 
             // const loadButton = document.createElement("button")
@@ -1369,6 +1462,100 @@
             // }).join("</br>");
         };
 
+
+
+        function showModal(title, okCallback, cancelCallback) {
+            const modalContainer = document.getElementById('modal-container');
+
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+
+            const modalHeader = document.createElement('div');
+            modalHeader.className = 'modal-header';
+
+            const modalTitle = document.createElement('h2');
+            modalTitle.className = 'modal-title';
+            modalTitle.innerText = title;
+
+            const container = document.createElement('div');
+            container.style = `display: flex;
+                            flex-direction: row-reverse;
+                            justify-content: space-between;
+                            `;
+            const inputName = document.createElement('input');
+            inputName.style.padding = '5px';
+            inputName.type = 'text';
+            inputName.id = 'customName';
+            inputName.placeholder = 'Set name';
+
+
+            const svgIcon = document.createElement('img');
+            svgIcon.src = 'icons/color_circle.png';
+            svgIcon.alt = 'Color Picker Icon';
+            svgIcon.style.width = '40px';
+            svgIcon.style.height = '40px';
+            svgIcon.style.cursor = 'pointer';
+            container.appendChild(svgIcon);
+            const inputColor = document.createElement('input');
+            inputColor.type = 'color';
+            inputColor.id = 'customColor';
+            inputColor.style.width = '0';
+            inputColor.style.height = '0';
+            inputColor.style.opacity = '0';
+
+            container.appendChild(inputColor);
+            svgIcon.addEventListener('click', function () {
+                inputColor.click();
+            });
+
+            container.appendChild(inputName);
+
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content';
+            modalContent.appendChild(container);
+
+            modalHeader.appendChild(modalTitle);
+            modal.appendChild(modalHeader);
+            modal.appendChild(modalContent);
+            modalContainer.appendChild(modal);
+
+            const modalButtons = document.createElement('div');
+            modalButtons.className = 'modal-buttons';
+
+            const okButton = document.createElement('button');
+            okButton.className = 'modal-button';
+            okButton.innerText = 'OK';
+            okButton.onclick = () => {
+                soilClasses.push({
+                    id: soilClasses.length + 1,
+                    name: inputName.value,
+                    color: inputColor.value
+                });
+
+                if (typeof okCallback === 'function') {
+                    okCallback();
+                }
+                modalContainer.style.display = 'none';
+                modalContainer.innerHTML = ''; // Clear the modal content
+            };
+
+            const cancelButton = document.createElement('button');
+            cancelButton.className = 'modal-button cancel';
+            cancelButton.innerText = 'Cancel';
+            cancelButton.onclick = () => {
+                if (typeof cancelCallback === 'function') {
+                    cancelCallback();
+                }
+                modalContainer.style.display = 'none';
+                modalContainer.innerHTML = ''; // Clear the modal content
+            };
+
+            modalButtons.appendChild(okButton);
+            modalButtons.appendChild(cancelButton);
+            modal.appendChild(modalButtons);
+
+            modalContainer.style.display = 'flex';
+        }
 
 
 
