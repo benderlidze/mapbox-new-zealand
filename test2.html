@@ -83,7 +83,6 @@
             margin-left: 5px;
         }
 
-
         .switch {
             position: relative;
             display: inline-block;
@@ -360,7 +359,7 @@
                 </div>
             </div>
         </div>
-        <div class="bottom">
+        <div class="bottom" id="edit-panel">
             <div class="left">
                 <div id="actions"></div>
             </div>
@@ -388,6 +387,8 @@
         const propertyControlsDiv = document.getElementById("property-controls")
         const saveAndLoadDiv = document.getElementById("property")
         saveAndLoadDiv.style.display = "none"
+
+        const editPanel = document.getElementById("edit-panel")
 
         const switchersEnableDiv = document.getElementById("legend")
         // const soilClasses = ["RFM", "RFW", "UEP", "GOA", "LOV", "LOT", "ZOH", "ZOT", "BOA", "WT", "BOM", "RTB", "LOA", "LIM", "ROT", "ROW", "BOT", "MOBL", "GOT", "BAP", "WX", "ice", "rive", "BAT", "PXM", "BFT", "town", "PIT", "BLA", "UEM", "UYT", "WF", "MOZ", "ZPT", "WS", "RST", "NXT", "ZXP", "RTT", "LOVA", "BLT", "LGT", "MOT", "PPU", "MOI", "NOA", "BOP", "BXT", "XOT", "BAM", "ZDH", "NOM", "UPS", "estu", "BLAD", "BAO", "BST", "GAP", "GRQ", "PPJX", "OMA", "PID", "NOT", "ZPH", "PJM", "BLX", "lake", "BLD", "GRT", "GSC", "PIM", "GOE", "RFT", "PJT", "PPJ", "ERT", "LPT", "BFL", "BMT", "GUFQ", "UST", "EOJC", "MIW", "RFAW", "BFA", "BMG", "PXJN", "BOC", "WO", "BMM", "BSA", "AFST", "BOH", "SIT", "EMT", "SAT", "UEY", "GAT", "ZPZ", "UPT", "GUF", "EOM", "OHM", "PPX", "PLT", "EOJ", "UYM", "LIT", "OHA", "RTM", "PJA", "PJN", "SAH", "SJT", "PXMC", "GSO", "MOBA", "BSM", "GST", "BFM", "RSM", "ERW", "PXJ", "MOM", "BMA", "PXJM", "SJQ", "RXT", "OMM", "RTBP", "GOO", "EMG", "XPT", "ROA", "ZXF", "EOT", "ZXQ", "EOC", "BFMA", "ZXH", "WGFU", "UDP", "NXM", "XNT", "OFA", "PPT", "ROM", "PLM", "quar", "BFP", "ZPP", "ZGT", "NPT", "MOL", "RFA", "WST", "PXJC", "SAM", "OFS", "BFC", "ZXU", "BLM", "GOC", "ROAW", "ATT", "RFMA", "BFAL", "NPA", "GAO", "UDM", "SAW", "MOBT", "EPT", "GRA", "WH", "BOI", "MIM", "RTBL", "PUM", "EODC", "EVT", "SJM", "BOMA", "MPT", "NXA", "BLAM", "MIT", "RTBA", "WHA", "GRO", "ZPU", "PJC", "EVM", "PXT", "EMM", "ZPOZ", "RFMQ", "PPF", "GOM", "ERO", "GOP", "RF?", "WGF", "BSP", "SJL"]
@@ -1047,6 +1048,8 @@
                 currentMode = "draw_polygon"
 
                 saveAndLoadDiv.style.display = "flex"
+
+                editMode(true)
             }
         }))
         actionsListDiv.appendChild(buildActionButton({
@@ -1069,8 +1072,24 @@
                 farmFeatures.turnOn()
                 farmFeaturesListDiv.style.display = "flex"
                 saveAndLoadDiv.style.display = "flex"
+
+                lockProperty.turnOn()
+                landUseClickLock = true
+                editMode(true)
             }
         }))
+
+        function editMode(enabled) {
+
+            if (enabled) {
+                editPanel.style.filter = "blur(5px)"
+                editPanel.style.pointerEvents = "none"
+            } else {
+                editPanel.style.filter = "none"
+                editPanel.style.pointerEvents = "auto"
+            }
+
+        }
 
         function changeCursor(cursorType) {
             map.getCanvas().style.cursor = cursorType;
@@ -1231,8 +1250,9 @@
 
                 farmFeaturesListDiv.style.display = "none"
 
-
                 saveAndLoadDiv.style.display = "none"
+
+                editMode(false)
             })
 
             // const loadButton = document.createElement("button")
