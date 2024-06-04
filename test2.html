@@ -163,6 +163,13 @@
             gap: 10px;
         }
 
+        #close-controls {
+            background-color: white;
+            padding: 10px;
+            border-radius: 10px;
+            display: none;
+        }
+
         #actions {
             display: flex;
             flex-direction: row;
@@ -357,6 +364,7 @@
                 <div id="property">
                     <div id="property-controls"></div>
                 </div>
+                <div id="close-controls"></div>
             </div>
         </div>
         <div class="bottom" id="edit-panel">
@@ -385,6 +393,7 @@
 
         const propertyListDiv = document.getElementById("list")
         const propertyControlsDiv = document.getElementById("property-controls")
+        const closeControl = document.getElementById("close-controls")
         const saveAndLoadDiv = document.getElementById("property")
         saveAndLoadDiv.style.display = "none"
 
@@ -1002,9 +1011,6 @@
         switchersEnableDiv.appendChild(waterways.div)
 
 
-
-
-
         const farmFeatures = buildSwitcher("Farm Features", checked => {
             const display = checked ? "visible" : "none"
             drawPontLayers.forEach(layer => {
@@ -1033,6 +1039,9 @@
                 landUseClickLock = true
 
                 changeCursor("pointer")
+
+                saveAndLoadDiv.style.display = "flex"
+                editMode(true)
             }
         }))
         actionsListDiv.appendChild(buildActionButton({
@@ -1063,6 +1072,9 @@
                 landUseClickLock = false
 
                 changeCursor("pointer")
+
+                closeControl.style.display = "flex"
+                editMode(true)
             }
         }))
 
@@ -1270,6 +1282,25 @@
             // })
             propertyControlsDiv.appendChild(saveButton)
             // propertyControlsDiv.appendChild(loadButton)
+
+
+            const closeButton = document.createElement("button")
+            closeButton.innerText = "Close"
+            closeButton.addEventListener("click", () => {
+
+                Draw.changeMode(Draw.modes.SIMPLE_SELECT)
+                currentMode = "simple_select"
+                lockProperty.turnOn()
+                drawControllVisible(false)
+                landUseClickLock = true
+
+                farmFeaturesListDiv.style.display = "none"
+                saveAndLoadDiv.style.display = "none"
+                closeControl.style.display = "none"
+
+                editMode(false)
+            })
+            closeControl.appendChild(closeButton)
         }
 
         function buildActionButton({ name, callback }) {
