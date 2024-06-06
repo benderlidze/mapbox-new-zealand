@@ -14,6 +14,11 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
+
+    <!-- Include Proj4js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js"></script>
+    <script src="js/nztm2000.js"></script>
+
     <style>
         .mapboxgl-ctrl-top-center {
             top: 0;
@@ -447,7 +452,22 @@
             style: 'mapbox://styles/mapbox/satellite-v9',
             center: { lng: 174.95943864902665, lat: -37.70716520232802 }, //
             zoom: 9,
-            projection: "mercator"
+            projection: "mercator",
+
+            // transformRequest: (url, resourceType) => {
+
+            //     console.log('url', url);
+            //     console.log('resourceType', resourceType);
+
+            //     if (resourceType === 'Tile' && url.includes('https://portals-maps-aws-2.scinfo.org.nz/')) {
+
+
+            //         return {
+            //             url: `https://portals-maps-aws-2.scinfo.org.nz/mapcache/portals/wmts/?layer=aspect_slope&style=default&tilematrixset=NZTM2000&Service=WMTS&Request=GetTile&Version=1.0.0&Format=jpeng&TileMatrix=6&TileCol=36&TileRow=49`
+            //         }
+            //     }
+            // }
+
         });
         // Add the control to the map.
         map.addControl(new mapboxgl.NavigationControl());
@@ -589,10 +609,11 @@
             map.setPaintProperty("gl-draw-polygon-fill-static.hot", 'fill-opacity', 0.6)
 
 
+
             // map.addSource('wms-test-source', {
             //     type: 'raster',
             //     tiles: [
-            //         'https://tiles-cdn.koordinates.com/services;key=1fe89c918dad495ca373b35a1d9e12a4/tiles/v4/layer=50804.404152,color=003399/{z}/{x}/{y}.png'
+            //         'https://tiles.nz/tiles/{z}/{x}/{y}.png'
             //     ],
             //     tileSize: 256
             // });
