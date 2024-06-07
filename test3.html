@@ -387,7 +387,8 @@
             map.addSource('wms-test-source', {
                 type: 'raster',
                 tiles: [
-                    'https://portals-maps-aws-4.scinfo.org.nz/mapcache/portals/wmts/?layer=aspect_slope&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/jpeg&TileMatrix={z}&TileCol={x}&TileRow={y}'
+                    //'https://portals-maps-aws-4.scinfo.org.nz/mapcache/portals/wmts/?layer=aspect_slope&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/jpeg&TileMatrix={z}&TileCol={x}&TileRow={y}'
+                    'https://portals-maps-aws-3.landcareresearch.co.nz/mapcache/portals/wmts/?layer=smap_polys_anno&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=jpeng&TileMatrix={z}&TileCol={x}&TileRow={y}'
                 ],
                 tileSize: 256
             });

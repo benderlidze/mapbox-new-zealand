@@ -625,6 +625,24 @@
                 }
             });
 
+            map.addSource('soil-type', {
+                type: 'raster',
+                tiles: [
+                    'https://portals-maps-aws-3.landcareresearch.co.nz/mapcache/portals/wmts/?layer=smap_polys_anno&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=jpeng&TileMatrix={z}&TileCol={x}&TileRow={y}'
+                ],
+                tileSize: 256
+            });
+            map.addLayer({
+                id: 'soil-type',
+                type: 'raster',
+                source: 'soil-type',
+                layout: {
+                    visibility: "none"
+                },
+                paint: {}
+            });
+
+
             map.addSource('base', {
                 type: 'vector',
                 url: 'mapbox://ourfarms.b895136s'
@@ -1019,6 +1037,12 @@
             map.setLayoutProperty('aspect', 'visibility', display);
         }, false, false)
         switchersEnableDiv.appendChild(aspect.div)
+
+        const soilType = buildSwitcher("Soil type", checked => {
+            const display = checked ? "visible" : "none"
+            map.setLayoutProperty('soil-type', 'visibility', display);
+        }, false, false)
+        switchersEnableDiv.appendChild(soilType.div)
 
         const landUse = buildSwitcher("Land Use Capability", checked => {
             const display = checked ? "visible" : "none"
