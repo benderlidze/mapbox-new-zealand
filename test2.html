@@ -608,22 +608,22 @@
             map.setPaintProperty("gl-draw-polygon-fill-active.hot", 'fill-opacity', 0.6)
             map.setPaintProperty("gl-draw-polygon-fill-static.hot", 'fill-opacity', 0.6)
 
-
-
-            // map.addSource('wms-test-source', {
-            //     type: 'raster',
-            //     tiles: [
-            //         'https://tiles.nz/tiles/{z}/{x}/{y}.png'
-            //     ],
-            //     tileSize: 256
-            // });
-            // map.addLayer({
-            //     id: 'wms-test-layer',
-            //     type: 'raster',
-            //     'visibility': "visible",
-            //     source: 'wms-test-source',
-            //     paint: {}
-            // });
+            map.addSource('aspect', {
+                type: 'raster',
+                tiles: [
+                    'https://portals-maps-aws-4.scinfo.org.nz/mapcache/portals/wmts/?layer=aspect_slope&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/jpeg&TileMatrix={z}&TileCol={x}&TileRow={y}'
+                ],
+                tileSize: 256
+            });
+            map.addLayer({
+                id: 'aspect',
+                type: 'raster',
+                source: 'aspect',
+                paint: {},
+                layout: {
+                    visibility: "none"
+                }
+            });
 
             map.addSource('base', {
                 type: 'vector',
@@ -1008,10 +1008,17 @@
             lockPropertyFromClick = checked
         }, false, true)
 
+
         divLock.appendChild(property.div)
         //divLock.appendChild(lockProperty.div)
         switchersEnableDiv.appendChild(divLock)
 
+
+        const aspect = buildSwitcher("Aspect", checked => {
+            const display = checked ? "visible" : "none"
+            map.setLayoutProperty('aspect', 'visibility', display);
+        }, false, false)
+        switchersEnableDiv.appendChild(aspect.div)
 
         const landUse = buildSwitcher("Land Use Capability", checked => {
             const display = checked ? "visible" : "none"
