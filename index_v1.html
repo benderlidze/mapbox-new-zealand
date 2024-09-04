@@ -651,6 +651,24 @@
                 }
             });
 
+            map.addSource('stock-arcgis-raster', {
+                'type': 'raster',
+                'tiles': [
+                    'https://maps.waikatoregion.govt.nz/arcgis/rest/services/WRCMAPS/WaterClassification/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&dpi=96&format=png32&transparent=true&layers=show:6&f=image'
+                ],
+                'tileSize': 256,
+                'attribution': '© Waikato Regional Council'
+            });
+            map.addLayer({
+                'id': 'stock-raster-layer',
+                'type': 'raster',
+                'source': 'stock-arcgis-raster',
+                layout: {
+                    visibility: "none"
+                },
+                'paint': {}
+            });
+
             map.addSource('soil-type', {
                 type: 'raster',
                 tiles: [
@@ -1102,6 +1120,14 @@
             map.setLayoutProperty('draw-farm-features-text-hot', 'visibility', display);
         }, false, false)
         switchersEnableDiv.appendChild(farmFeatures.div)
+
+
+
+        const stockExclusion = buildSwitcher("Stock Exclusion", checked => {
+            const display = checked ? "visible" : "none"
+            map.setLayoutProperty('stock-raster-layer', 'visibility', display);
+        }, false, false)
+        switchersEnableDiv.appendChild(stockExclusion.div)
 
         // const soil = buildSwitcher("Soil", checked => {
         //     const display = checked ? "visible" : "none"

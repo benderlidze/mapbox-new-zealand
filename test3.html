@@ -380,28 +380,27 @@
 
 
 
-        map.on('load', () => {
-
-
-
-            map.addSource('wms-test-source', {
-                type: 'raster',
-                tiles: [
-                    //'https://portals-maps-aws-4.scinfo.org.nz/mapcache/portals/wmts/?layer=aspect_slope&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/jpeg&TileMatrix={z}&TileCol={x}&TileRow={y}'
-                    'https://portals-maps-aws-3.landcareresearch.co.nz/mapcache/portals/wmts/?layer=smap_polys_anno&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=jpeng&TileMatrix={z}&TileCol={x}&TileRow={y}'
+        // 2. Add the ArcGIS REST service layer as a raster layer
+        map.on('load', function () {
+            map.addSource('arcgis-raster', {
+                'type': 'raster',
+                'tiles': [
+                    'https://maps.waikatoregion.govt.nz/arcgis/rest/services/WRCMAPS/WaterClassification/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&dpi=96&format=png32&transparent=true&layers=show:6&f=image'
                 ],
-                tileSize: 256
+                'tileSize': 256,
+                'attribution': '© Waikato Regional Council'
             });
+
             map.addLayer({
-                id: 'wms-test-layer',
-                type: 'raster',
-                'visibility': "visible",
-                source: 'wms-test-source',
-                paint: {}
+                'id': 'arcgis-raster-layer',
+                'type': 'raster',
+                'source': 'arcgis-raster',
+                'paint': {}
             });
+        });
 
 
-        })
+
 
 
 
