@@ -1531,91 +1531,41 @@
 
         createFarmFeaturesList()
         function createFarmFeaturesList() {
-
             farmFeaturesListItemsDiv.innerHTML = ""
+
+            let lastSelectedItem = null; // Track the last selected item
 
             farmFeaturesNames.forEach(item => {
                 farmFeaturesListItemsDiv.appendChild(createItem(item))
             })
 
-            function createItem(item, callback) {
+            function createItem(item) {
                 const div = document.createElement("div")
                 div.className = "selected-farm-item"
                 const text = document.createElement("span")
                 text.innerText = ' + ' + item.name
                 div.appendChild(text)
+
                 div.addEventListener("click", () => {
-                    div.classList.add("selected-farm-feature")
+                    if (lastSelectedItem) {
+                        lastSelectedItem.classList.remove("selected-farm-feature") // Remove the class from the last selected item
+                    }
+                    div.classList.add("selected-farm-feature") // Add the class to the current item
+                    lastSelectedItem = div; // Update the last selected item
+
                     Draw.changeMode(Draw.modes.DRAW_POINT)
                     map.once('draw.create', function (e) {
                         const id = e.features[0].id
                         Draw.setFeatureProperty(id, "name", item.name)
                         div.classList.remove("selected-farm-feature")
+                        lastSelectedItem = null; // Clear the last selected item after drawing is complete
                     })
                 })
+
                 return div
             }
-
-
-            //cursor 
-            // changeCursor("crosshair")
-            // map.once('click',
-            //     function (e) {
-            //         const coordinates = e.lngLat
-            //         const feature = {
-            //             'type': 'Feature',
-            //             'properties': {
-            //                 'user_name': item,
-            //             },
-            //             'geometry': {
-            //                 'type': 'Point',
-            //                 'coordinates': [coordinates.lng, coordinates.lat]
-            //             }
-            //         }
-            //         map.getSource('farm-features').setData({
-            //             'type': 'FeatureCollection',
-            //             'features': [
-            //                 ...map.getSource('farm-features')._data.features,
-            //                 feature
-            //             ]
-            //         })
-            //         changeCursor("pointer")
-            //     }
-            // )
-
-            // map.once('draw.create', function (e) {
-            //     //draw get last id 
-            //     const id = e.features[0].id
-            //     console.log('id', id);
-            //     Draw.setFeatureProperty(id, "name", item)
-            // })
-
-            // map.once('draw.create', function (e) {
-            //     const coordinates = e.features[0].geometry.coordinates
-            //     const feature = {
-            //         'type': 'Feature',
-            //         'properties': {
-            //             'name': item,
-            //         },
-            //         'geometry': {
-            //             'type': 'Point',
-            //             'coordinates': coordinates
-            //         }
-            //     }
-            //     map.getSource('farm-features').setData({
-            //         'type': 'FeatureCollection',
-            //         'features': [
-            //             ...map.getSource('farm-features')._data.features,
-            //             feature
-            //         ]
-            //     })
-            //     Draw.changeMode('simple_select')
-            //     //Draw delete last point
-            //     Draw.delete(e.features[0].id)
-
-            //     currentMode = "simple_select"
-            // });
         }
+
 
         function createObservableArray(callback) {
             // Handler for the Proxy
