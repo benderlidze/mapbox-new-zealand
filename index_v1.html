@@ -266,8 +266,14 @@
             border-radius: 10px;
             display: flex;
             flex-direction: column;
-            gap: 5px;
             width: 230px;
+            gap: 10px;
+        }
+
+        #farm-features-list-items {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
 
 
@@ -373,7 +379,10 @@
     <div id="panel">
         <div id="legend"></div>
         <div id="list"></div>
-        <div id="farm-features-list"></div>
+        <div id="farm-features-list">
+            <div id="farm-features-list-menu"></div>
+            <div id="farm-features-list-items"></div>
+        </div>
     </div>
 
     <div class="main">
@@ -410,6 +419,8 @@
 
         const farmFeaturesListDiv = document.getElementById("farm-features-list")
         farmFeaturesListDiv.style.display = "none"
+        const farmFeaturesListItemsDiv = document.getElementById("farm-features-list-items")
+        const farmFeaturesListMenuDiv = document.getElementById("farm-features-list-menu")
 
         const propertyListDiv = document.getElementById("list")
         const propertyControlsDiv = document.getElementById("property-controls")
@@ -430,27 +441,27 @@
         ]
 
         const farmFeaturesNames = [
-            "Agrichemical Storage",
-            "Animal Health Storage",
-            "Washdown Area",
-            "Fuel Storage",
-            "Fertiliser Bin",
-            "Effluent Pond",
-            "Airstrip",
-            "Woolshed",
-            "Sheep Yards",
-            "Cattle Yards",
-            "Water take ",
-            "Irrigation",
-            "Bridge",
-            "Consented Culvert",
-            "Feed Pad & Feed Lot",
-            "Surface Water Intake",
-            "Bore",
-            "Farm Dump",
-            "Offal Hole",
-            "Old Sheep dip",
-            "Private Drinking Water Outlet",
+            { name: "Agrichemical Storage", color: "" },
+            { name: "Animal Health Storage", color: "" },
+            { name: "Washdown Area", color: "" },
+            { name: "Fuel Storage", color: "" },
+            { name: "Fertiliser Bin", color: "" },
+            { name: "Effluent Pond", color: "" },
+            { name: "Airstrip", color: "" },
+            { name: "Woolshed", color: "" },
+            { name: "Sheep Yards", color: "" },
+            { name: "Cattle Yards", color: "" },
+            { name: "Water take ", color: "" },
+            { name: "Irrigation", color: "" },
+            { name: "Bridge", color: "" },
+            { name: "Consented Culvert", color: "" },
+            { name: "Feed Pad & Feed Lot", color: "" },
+            { name: "Surface Water Intake", color: "" },
+            { name: "Bore", color: "" },
+            { name: "Farm Dump", color: "" },
+            { name: "Offal Hole", color: "" },
+            { name: "Old Sheep dip", color: "" },
+            { name: "Private Drinking Water Outlet", color: "" },
         ]
 
         const selectedBasePolygons = createObservableArray(callback);
@@ -1466,6 +1477,10 @@
         }
 
 
+        // const farmFeaturesListItemsDiv = document.getElementById("farm-features-list-items")
+        // const farmFeaturesListMenuDiv = document.getElementById("farm-features-list-menu")
+
+
         const div = document.createElement("div")
         div.className = "selected-farm-item"
         div.style.justifyContent = "center"
@@ -1473,31 +1488,42 @@
         text.innerText = 'Create New Feature'
         div.appendChild(text)
         div.addEventListener("click", () => {
-            
+
+            showModal("Set custom option", (props) => {
+                console.log('props', props);
+                //add to the top of the list
+                farmFeaturesNames.unshift({
+                    name: `${props.name}`,
+                    color: props.color
+                })
+                createFarmFeaturesList()
+            })
+
         })
-        farmFeaturesListDiv.appendChild(div)
+        farmFeaturesListMenuDiv.appendChild(div)
 
 
         createFarmFeaturesList()
         function createFarmFeaturesList() {
 
+            farmFeaturesListItemsDiv.innerHTML = ""
 
             farmFeaturesNames.forEach(item => {
-                farmFeaturesListDiv.appendChild(createItem(item))
+                farmFeaturesListItemsDiv.appendChild(createItem(item))
             })
 
             function createItem(item, callback) {
                 const div = document.createElement("div")
                 div.className = "selected-farm-item"
                 const text = document.createElement("span")
-                text.innerText = ' + ' + item
+                text.innerText = ' + ' + item.name
                 div.appendChild(text)
                 div.addEventListener("click", () => {
                     div.classList.add("selected-farm-feature")
                     Draw.changeMode(Draw.modes.DRAW_POINT)
                     map.once('draw.create', function (e) {
                         const id = e.features[0].id
-                        Draw.setFeatureProperty(id, "name", item)
+                        Draw.setFeatureProperty(id, "name", item.name)
                         div.classList.remove("selected-farm-feature")
                     })
                 })
@@ -1667,7 +1693,7 @@
                 });
 
                 if (typeof okCallback === 'function') {
-                    okCallback();
+                    okCallback({ name: inputName.value, color: inputColor.value });
                 }
                 modalContainer.style.display = 'none';
                 modalContainer.innerHTML = ''; // Clear the modal content
