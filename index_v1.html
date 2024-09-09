@@ -753,14 +753,17 @@
 
             map.addSource('waterways', {
                 type: 'vector',
-                url: 'mapbox://ourfarms.c10kf05t'
+                //url: 'mapbox://ourfarms.c10kf05t'
+                url: 'mapbox://ourfarms.3cvf1n1m'
+
             });
             map.addLayer(
                 {
                     'id': 'waterways-data',
                     'type': 'line',
                     'source': 'waterways',
-                    'source-layer': 'river-flows-2nhit5',
+                    // 'source-layer': 'river-flows-2nhit5',
+                    'source-layer': 'nzrivernamelinespilot',
                     'layout': {
                         'visibility': "none",
                         'line-join': 'round',
