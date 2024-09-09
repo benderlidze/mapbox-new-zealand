@@ -666,7 +666,7 @@
             map.addSource('stock-arcgis-raster', {
                 'type': 'raster',
                 'tiles': [
-                    'https://maps.waikatoregion.govt.nz/arcgis/rest/services/WRCMAPS/WaterClassification/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&dpi=96&format=png32&transparent=true&layers=show%3A-1%2C-1%2C-1%2C7&f=image'
+                    'https://maps.waikatoregion.govt.nz/arcgis/rest/services/WRCMAPS/WaterClassification/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&dpi=96&format=png32&transparent=true&layers=show:6&f=image'
                 ],
                 'tileSize': 256,
                 'attribution': '© Waikato Regional Council'
@@ -1633,6 +1633,7 @@
         };
 
 
+
         function showModal(title, okCallback, cancelCallback) {
             const modalContainer = document.getElementById('modal-container');
 
@@ -1678,12 +1679,12 @@
             const modalButtons = document.createElement('div');
             modalButtons.className = 'modal-buttons';
 
-            // const deleteButton = document.createElement('button');
-            // deleteButton.className = 'modal-button';
-            // deleteButton.innerText = 'OK';
-            // deleteButton.onclick = () => {
-            //     console.log('farmFeaturesNames', farmFeaturesNames);
-            // };
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'modal-button';
+            deleteButton.innerText = 'OK';
+            deleteButton.onclick = () => {
+                console.log('farmFeaturesNames', farmFeaturesNames);
+            };
 
             const okButton = document.createElement('button');
             okButton.className = 'modal-button';
@@ -1713,7 +1714,7 @@
                 modalContainer.innerHTML = ''; // Clear the modal content
             };
 
-            // modalButtons.appendChild(deleteButton);
+            modalButtons.appendChild(deleteButton);
             modalButtons.appendChild(okButton);
             modalButtons.appendChild(cancelButton);
             modal.appendChild(modalButtons);
