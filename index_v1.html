@@ -376,6 +376,22 @@
             content: '\2807';
             font-size: 20px;
         }
+
+        .delete-button {
+            border: 1px solid red;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 10px;
+            border-radius: 5px;
+            background-color: red;
+            background-image: url(/icons/rubbish-white.svg);
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 20px;
+            background-size: 20px 20px;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -606,13 +622,16 @@
                 selectCustomColor.textContent = "Add option"
 
                 selectCustomColor.addEventListener("click", () => {
-                    showModal("Set custom option", () => {
-                        //rebuild/update the drop down container with new custom value
-                        dropDown.innerHTML = `
+                    showModal({
+                        title: "Set custom option",
+                        okCallback: () => {
+                            //rebuild/update the drop down container with new custom value
+                            dropDown.innerHTML = `
                             <option selected disabled value="">Select option</option>`
-                            + soilClasses.map(item => {
-                                return `<option value="${item.id}">${item.name}</option>`
-                            }).join("")
+                                + soilClasses.map(item => {
+                                    return `<option value="${item.id}">${item.name}</option>`
+                                }).join("")
+                        }
                     })
                 })
 
@@ -1527,15 +1546,18 @@
         div.appendChild(text)
         div.addEventListener("click", () => {
 
-            showModal("Set custom option", (props) => {
-                console.log('props', props);
-                //add to the top of the list
-                farmFeaturesNames.unshift({
-                    name: `${props.name}`,
-                    color: props.color,
-                    editable: true
-                })
-                createFarmFeaturesList()
+            showModal({
+                title: "Set custom option",
+                okCallback: (props) => {
+                    console.log('props', props);
+                    //add to the top of the list
+                    farmFeaturesNames.unshift({
+                        name: `${props.name}`,
+                        color: props.color,
+                        editable: true
+                    })
+                    createFarmFeaturesList()
+                },
             })
 
         })
@@ -1583,9 +1605,23 @@
                 editButton.style.cursor = "pointer"
                 editButton.className = "edit-container"
                 editButton.addEventListener("click", () => {
-                    showModal("Set custom option", (props) => {
-                        item.name = props.name
-                        createFarmFeaturesList()
+                    showModal({
+                        title: "Set custom option",
+                        data: {
+                            name: item.name,
+                            color: item.color,
+                        },
+                        okCallback: (props) => {
+                            item.name = props.name
+                            createFarmFeaturesList()
+                        },
+                        onDeleteCallback: () => {
+                            console.log('onDeleteCallback');
+                            //remove from array by name with splice method
+                            const index = farmFeaturesNames.findIndex(i => i.name === item.name)
+                            farmFeaturesNames.splice(index, 1)
+                            createFarmFeaturesList()
+                        }
                     })
                 })
 
@@ -1633,7 +1669,7 @@
         };
 
 
-        function showModal(title, okCallback, cancelCallback) {
+        function showModal({ title, data, okCallback, cancelCallback, onDeleteCallback }) {
             const modalContainer = document.getElementById('modal-container');
 
             const modal = document.createElement('div');
@@ -1656,6 +1692,7 @@
             inputName.type = 'text';
             inputName.id = 'customName';
             inputName.placeholder = 'Set name';
+            inputName.value = data?.name || '';
 
             const colorInput = document.createElement('input');
             colorInput.type = 'color';
@@ -1677,13 +1714,6 @@
 
             const modalButtons = document.createElement('div');
             modalButtons.className = 'modal-buttons';
-
-            // const deleteButton = document.createElement('button');
-            // deleteButton.className = 'modal-button';
-            // deleteButton.innerText = 'OK';
-            // deleteButton.onclick = () => {
-            //     console.log('farmFeaturesNames', farmFeaturesNames);
-            // };
 
             const okButton = document.createElement('button');
             okButton.className = 'modal-button';
@@ -1713,7 +1743,18 @@
                 modalContainer.innerHTML = ''; // Clear the modal content
             };
 
-            // modalButtons.appendChild(deleteButton);
+            if (onDeleteCallback) {
+                const deleteButton = document.createElement('div');
+                deleteButton.className = 'delete-button';
+                deleteButton.onclick = () => {
+                    onDeleteCallback();
+
+                    modalContainer.style.display = 'none';
+                    modalContainer.innerHTML = ''; // Clear the modal content
+                };
+                modalButtons.appendChild(deleteButton);
+            }
+
             modalButtons.appendChild(okButton);
             modalButtons.appendChild(cancelButton);
             modal.appendChild(modalButtons);
