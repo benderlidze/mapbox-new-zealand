@@ -830,17 +830,37 @@
                     }
                 },
             );
+            // OLD???
+            // map.addSource('lowslope', {
+            //     type: 'vector',
+            //     url: 'mapbox://ourfarms.3jcqeu12'
+            // });
+            // map.addLayer(
+            //     {
+            //         'id': 'lowslope-data',
+            //         'type': 'fill',
+            //         'source': 'lowslope',
+            //         'source-layer': 'REDUCED-stock-exclusion-low-s-dos2ed',
+            //         'layout': {
+            //             'visibility': "none",
+            //         },
+            //         'paint': {
+            //             'fill-color': 'red',
+            //             'fill-opacity': 0.5
+            //         }
+            //     },
+            // );
 
             map.addSource('lowslope', {
                 type: 'vector',
-                url: 'mapbox://ourfarms.3jcqeu12'
+                url: 'mapbox://ourfarms.8o9u13mg'
             });
             map.addLayer(
                 {
                     'id': 'lowslope-data',
                     'type': 'fill',
                     'source': 'lowslope',
-                    'source-layer': 'REDUCED-stock-exclusion-low-s-dos2ed',
+                    'source-layer': 'stockexclusionlowslopeland2022',
                     'layout': {
                         'visibility': "none",
                     },
@@ -1143,6 +1163,12 @@
             map.setLayoutProperty('waterways-data', 'visibility', display);
         }, false, false)
         switchersEnableDiv.appendChild(waterways.div)
+
+        const lowSlope = buildSwitcher("Low Slope", checked => {
+            const display = checked ? "visible" : "none"
+            map.setLayoutProperty('lowslope-data', 'visibility', display);
+        }, false, false)
+        switchersEnableDiv.appendChild(lowSlope.div)
 
 
         const farmFeatures = buildSwitcher("Farm Features", checked => {
