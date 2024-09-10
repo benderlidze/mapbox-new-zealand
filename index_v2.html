@@ -457,9 +457,35 @@
         saveAndLoadDiv.style.display = "none"
 
         const editPanel = document.getElementById("edit-panel")
-
         const switchersEnableDiv = document.getElementById("legend")
         // const soilClasses = ["RFM", "RFW", "UEP", "GOA", "LOV", "LOT", "ZOH", "ZOT", "BOA", "WT", "BOM", "RTB", "LOA", "LIM", "ROT", "ROW", "BOT", "MOBL", "GOT", "BAP", "WX", "ice", "rive", "BAT", "PXM", "BFT", "town", "PIT", "BLA", "UEM", "UYT", "WF", "MOZ", "ZPT", "WS", "RST", "NXT", "ZXP", "RTT", "LOVA", "BLT", "LGT", "MOT", "PPU", "MOI", "NOA", "BOP", "BXT", "XOT", "BAM", "ZDH", "NOM", "UPS", "estu", "BLAD", "BAO", "BST", "GAP", "GRQ", "PPJX", "OMA", "PID", "NOT", "ZPH", "PJM", "BLX", "lake", "BLD", "GRT", "GSC", "PIM", "GOE", "RFT", "PJT", "PPJ", "ERT", "LPT", "BFL", "BMT", "GUFQ", "UST", "EOJC", "MIW", "RFAW", "BFA", "BMG", "PXJN", "BOC", "WO", "BMM", "BSA", "AFST", "BOH", "SIT", "EMT", "SAT", "UEY", "GAT", "ZPZ", "UPT", "GUF", "EOM", "OHM", "PPX", "PLT", "EOJ", "UYM", "LIT", "OHA", "RTM", "PJA", "PJN", "SAH", "SJT", "PXMC", "GSO", "MOBA", "BSM", "GST", "BFM", "RSM", "ERW", "PXJ", "MOM", "BMA", "PXJM", "SJQ", "RXT", "OMM", "RTBP", "GOO", "EMG", "XPT", "ROA", "ZXF", "EOT", "ZXQ", "EOC", "BFMA", "ZXH", "WGFU", "UDP", "NXM", "XNT", "OFA", "PPT", "ROM", "PLM", "quar", "BFP", "ZPP", "ZGT", "NPT", "MOL", "RFA", "WST", "PXJC", "SAM", "OFS", "BFC", "ZXU", "BLM", "GOC", "ROAW", "ATT", "RFMA", "BFAL", "NPA", "GAO", "UDM", "SAW", "MOBT", "EPT", "GRA", "WH", "BOI", "MIM", "RTBL", "PUM", "EODC", "EVT", "SJM", "BOMA", "MPT", "NXA", "BLAM", "MIT", "RTBA", "WHA", "GRO", "ZPU", "PJC", "EVM", "PXT", "EMM", "ZPOZ", "RFMQ", "PPF", "GOM", "ERO", "GOP", "RF?", "WGF", "BSP", "SJL"]
+
+        const appData = {
+            farmFeaturesGEO: [],
+            farmFeaturesNames: [
+                { name: "Agrichemical Storage", color: "" },
+                { name: "Animal Health Storage", color: "" },
+                { name: "Washdown Area", color: "" },
+                { name: "Fuel Storage", color: "" },
+                { name: "Fertiliser Bin", color: "" },
+                { name: "Effluent Pond", color: "" },
+                { name: "Airstrip", color: "" },
+                { name: "Woolshed", color: "" },
+                { name: "Sheep Yards", color: "" },
+                { name: "Cattle Yards", color: "" },
+                { name: "Water take ", color: "" },
+                { name: "Irrigation", color: "" },
+                { name: "Bridge", color: "" },
+                { name: "Consented Culvert", color: "" },
+                { name: "Feed Pad & Feed Lot", color: "" },
+                { name: "Surface Water Intake", color: "" },
+                { name: "Bore", color: "" },
+                { name: "Farm Dump", color: "" },
+                { name: "Offal Hole", color: "" },
+                { name: "Old Sheep dip", color: "" },
+                { name: "Private Drinking Water Outlet", color: "" },
+            ]
+        }
 
         const soilClasses = [
             { id: 1, name: "steep country", color: "#FF0000" },
@@ -468,29 +494,6 @@
             { id: 4, name: "River flats", color: "#0000FF" },
         ]
 
-        const farmFeaturesNames = [
-            { name: "Agrichemical Storage", color: "" },
-            { name: "Animal Health Storage", color: "" },
-            { name: "Washdown Area", color: "" },
-            { name: "Fuel Storage", color: "" },
-            { name: "Fertiliser Bin", color: "" },
-            { name: "Effluent Pond", color: "" },
-            { name: "Airstrip", color: "" },
-            { name: "Woolshed", color: "" },
-            { name: "Sheep Yards", color: "" },
-            { name: "Cattle Yards", color: "" },
-            { name: "Water take ", color: "" },
-            { name: "Irrigation", color: "" },
-            { name: "Bridge", color: "" },
-            { name: "Consented Culvert", color: "" },
-            { name: "Feed Pad & Feed Lot", color: "" },
-            { name: "Surface Water Intake", color: "" },
-            { name: "Bore", color: "" },
-            { name: "Farm Dump", color: "" },
-            { name: "Offal Hole", color: "" },
-            { name: "Old Sheep dip", color: "" },
-            { name: "Private Drinking Water Outlet", color: "" },
-        ]
 
         const selectedBasePolygons = createObservableArray(callback);
         const landUseColors = createObservableArray(() => {
@@ -501,27 +504,10 @@
         mapboxgl.accessToken = 'pk.eyJ1Ijoib3VyZmFybXMiLCJhIjoiY2x3YWRhbW9nMGRsNjJxcHFwdW81emVhNSJ9.forvlRpP1nOZekrRDqBKjQ';
         const map = new mapboxgl.Map({
             container: 'map',
-            // You can add layers to the predetermined slots within the Standard style basemap.
-            // style: 'mapbox://styles/mapbox/standard',
             style: 'mapbox://styles/mapbox/satellite-v9',
             center: { lng: 174.95943864902665, lat: -37.70716520232802 }, //
             zoom: 9,
             projection: "mercator",
-
-            // transformRequest: (url, resourceType) => {
-
-            //     console.log('url', url);
-            //     console.log('resourceType', resourceType);
-
-            //     if (resourceType === 'Tile' && url.includes('https://portals-maps-aws-2.scinfo.org.nz/')) {
-
-
-            //         return {
-            //             url: `https://portals-maps-aws-2.scinfo.org.nz/mapcache/portals/wmts/?layer=aspect_slope&style=default&tilematrixset=NZTM2000&Service=WMTS&Request=GetTile&Version=1.0.0&Format=jpeng&TileMatrix=6&TileCol=36&TileRow=49`
-            //         }
-            //     }
-            // }
-
         });
         // Add the control to the map.
         map.addControl(new mapboxgl.NavigationControl());
@@ -682,23 +668,6 @@
                 }
             });
 
-            map.addSource('stock-arcgis-raster', {
-                'type': 'raster',
-                'tiles': [
-                    'https://maps.waikatoregion.govt.nz/arcgis/rest/services/WRCMAPS/WaterClassification/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&dpi=96&format=png32&transparent=true&layers=show%3A-1%2C-1%2C-1%2C7&f=image'
-                ],
-                'tileSize': 256,
-                'attribution': '© Waikato Regional Council'
-            });
-            map.addLayer({
-                'id': 'stock-raster-layer',
-                'type': 'raster',
-                'source': 'stock-arcgis-raster',
-                layout: {
-                    visibility: "none"
-                },
-                'paint': {}
-            });
 
             map.addSource('soil-type', {
                 type: 'raster',
@@ -714,7 +683,6 @@
                 layout: {
                     visibility: "none"
                 },
-                paint: {}
             });
 
 
@@ -830,26 +798,7 @@
                     }
                 },
             );
-            // OLD???
-            // map.addSource('lowslope', {
-            //     type: 'vector',
-            //     url: 'mapbox://ourfarms.3jcqeu12'
-            // });
-            // map.addLayer(
-            //     {
-            //         'id': 'lowslope-data',
-            //         'type': 'fill',
-            //         'source': 'lowslope',
-            //         'source-layer': 'REDUCED-stock-exclusion-low-s-dos2ed',
-            //         'layout': {
-            //             'visibility': "none",
-            //         },
-            //         'paint': {
-            //             'fill-color': 'red',
-            //             'fill-opacity': 0.5
-            //         }
-            //     },
-            // );
+
 
             map.addSource('lowslope', {
                 type: 'vector',
@@ -873,106 +822,71 @@
 
 
 
-            // map.addLayer(
-            //     {
-            //         'id': 'farm-features',
-            //         'type': 'circle',
-            //         'source': 'farm-features',
-            //         'layout': {
-            //             'visibility': "none",
-            //         },
-            //         'paint': {
-            //             'circle-radius': 6,
-            //             'circle-color': 'red',
-            //             'circle-stroke-color': 'white',
-            //             'circle-stroke-width': 2
-            //         },
-            //         'filter': ['==', '$type', 'Point']
-            //     },
-            // );
-            // map.addLayer(
-            //     {
-            //         'id': 'farm-features-text',
-            //         'type': 'symbol',
-            //         'source': 'farm-features',
-            //         'layout': {
-            //             'visibility': "none",
-            //             'text-field': `{user_name}`,
-            //             'text-font': [
-            //                 'Open Sans Bold',
-            //                 'Arial Unicode MS Bold'
-            //             ],
-            //             'text-size': 13,
-            //             'text-letter-spacing': 0.05,
-            //             'text-variable-anchor': ['left'],
-            //             'text-radial-offset': 0.5,
-            //             'text-max-width': 1000,
-            //             'text-allow-overlap': true,
-            //         },
-            //         'paint': {
-            //             'text-color': 'white',
-            //             'text-halo-color': 'black',
-            //             'text-halo-width': 1
-            //         },
-            //     },
-            // );
 
-
-
-            map.addLayer(
-                {
-                    'id': 'draw-farm-features-text',
-                    'type': 'symbol',
-                    'source': 'mapbox-gl-draw-cold',
-                    'layout': {
-                        'visibility': "none",
-                        'text-field': `{user_name}`,
-                        'text-font': [
-                            'Open Sans Bold',
-                            'Arial Unicode MS Bold'
-                        ],
-                        'text-size': 13,
-                        'text-letter-spacing': 0.05,
-                        'text-variable-anchor': ['left'],
-                        'text-radial-offset': 0.5,
-                        'text-max-width': 1000,
-                        'text-allow-overlap': true,
-                    },
-                    'paint': {
-                        'text-color': 'white',
-                        'text-halo-color': 'black',
-                        'text-halo-width': 1
-                    },
-                    filter: ['==', '$type', 'Point']
+            map.addSource('farm-features', {
+                type: 'geojson',
+                data: {
+                    type: 'FeatureCollection',
+                    features: []
+                }
+            });
+            map.addLayer({
+                'id': 'farm-features-circle',
+                'type': 'circle',
+                'source': 'farm-features',
+                'paint': {
+                    'circle-radius': 6,
+                    'circle-color': ['get', 'color'],
+                    'circle-stroke-color': 'white',
+                    'circle-stroke-width': 2
                 },
-            );
-            map.addLayer(
-                {
-                    'id': 'draw-farm-features-text-hot',
-                    'type': 'symbol',
-                    'source': 'mapbox-gl-draw-hot',
-                    'layout': {
-                        'visibility': "none",
-                        'text-field': `{user_name}`,
-                        'text-font': [
-                            'Open Sans Bold',
-                            'Arial Unicode MS Bold'
-                        ],
-                        'text-size': 13,
-                        'text-letter-spacing': 0.05,
-                        'text-variable-anchor': ['left'],
-                        'text-radial-offset': 0.5,
-                        'text-max-width': 1000,
-                        'text-allow-overlap': true,
-                    },
-                    'paint': {
-                        'text-color': 'white',
-                        'text-halo-color': 'black',
-                        'text-halo-width': 1
-                    },
-                    filter: ['==', '$type', 'Point']
+            });
+            map.addLayer({
+                'id': 'farm-features-text',
+                'type': 'symbol',
+                'source': 'farm-features',
+                'layout': {
+                    'text-field': ['get', 'farm-name'],
+                    'text-font': [
+                        'Open Sans Bold',
+                        'Arial Unicode MS Bold'
+                    ],
+                    'text-size': 13,
+                    'text-variable-anchor': ['left'],
+                    'text-radial-offset': 0.5,
+                    'text-allow-overlap': true,
                 },
-            );
+                'paint': {
+                    'text-color': 'white',
+                    'text-halo-color': 'black',
+                    'text-halo-width': 1
+                },
+            });
+
+            map.addSource('stock-arcgis-raster', {
+                'type': 'raster',
+                'tiles': [
+                    'https://maps.waikatoregion.govt.nz/arcgis/rest/services/WRCMAPS/WaterClassification/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&dpi=96&format=png32&transparent=true&layers=show%3A-1%2C-1%2C-1%2C7&f=image'
+                ],
+                'tileSize': 256,
+                'attribution': '© Waikato Regional Council'
+            });
+            map.addLayer({
+                'id': 'stock-raster-layer',
+                'type': 'raster',
+                'source': 'stock-arcgis-raster',
+                layout: {
+                    visibility: "none"
+                },
+            });
+            map.addLayer({
+                'id': 'stock-raster-layer1',
+                'type': 'raster',
+                'source': 'stock-arcgis-raster',
+                layout: {
+                    visibility: "none"
+                },
+            });
 
 
             map.on('click', 'landuse-data-fill', (e) => {
@@ -1147,8 +1061,6 @@
             drawPontLayers.forEach(layer => {
                 map.setLayoutProperty(layer, 'visibility', display)
             })
-            map.setLayoutProperty('draw-farm-features-text', 'visibility', display);
-            map.setLayoutProperty('draw-farm-features-text-hot', 'visibility', display);
         }, false, false)
         switchersEnableDiv.appendChild(farmFeatures.div)
 
@@ -1157,6 +1069,7 @@
         const stockExclusion = buildSwitcher("Stock Exclusion", checked => {
             const display = checked ? "visible" : "none"
             map.setLayoutProperty('stock-raster-layer', 'visibility', display);
+            map.setLayoutProperty('stock-raster-layer1', 'visibility', display); // to increase brightness
         }, false, false)
         switchersEnableDiv.appendChild(stockExclusion.div)
 
@@ -1533,11 +1446,6 @@
             return { div, turnOn, turnOff }
         }
 
-
-        // const farmFeaturesListItemsDiv = document.getElementById("farm-features-list-items")
-        // const farmFeaturesListMenuDiv = document.getElementById("farm-features-list-menu")
-
-
         const div = document.createElement("div")
         div.className = "selected-farm-item"
         div.style.justifyContent = "center"
@@ -1551,7 +1459,7 @@
                 okCallback: (props) => {
                     console.log('props', props);
                     //add to the top of the list
-                    farmFeaturesNames.unshift({
+                    appData.farmFeaturesNames.unshift({
                         name: `${props.name}`,
                         color: props.color,
                         editable: true
@@ -1565,12 +1473,13 @@
 
 
         createFarmFeaturesList()
+
         function createFarmFeaturesList() {
             farmFeaturesListItemsDiv.innerHTML = ""
 
             let lastSelectedItem = null; // Track the last selected item
 
-            farmFeaturesNames.forEach(item => {
+            appData.farmFeaturesNames.forEach(item => {
                 farmFeaturesListItemsDiv.appendChild(createItem(item))
             })
 
@@ -1586,21 +1495,36 @@
                 div.appendChild(text)
 
                 div.addEventListener("click", () => {
+
+                    console.log('DRAW POINT',);
+                    map.getCanvas().style.cursor = "crosshair"
+
+                    map.once("click", e => {
+                        console.log('e', e);
+                        const { lat, lng } = e.lngLat
+
+                        appData.farmFeaturesGEO.push({
+                            uid: generateUID(),
+                            name: item.name,
+                            color: item.color,
+                            lat,
+                            lng,
+                        })
+
+                        redrawFarmFeaturesLayer()
+
+                        div.classList.remove("selected-farm-feature")
+                        lastSelectedItem = null;
+
+                        map.getCanvas().style.cursor = ""
+                    })
+
                     if (lastSelectedItem) {
                         lastSelectedItem.classList.remove("selected-farm-feature") // Remove the class from the last selected item
                     }
                     div.classList.add("selected-farm-feature") // Add the class to the current item
                     lastSelectedItem = div; // Update the last selected item
 
-                    Draw.changeMode(Draw.modes.DRAW_POINT)
-                    map.once('draw.create', function (e) {
-                        const id = e.features[0].id
-                        Draw.setFeatureProperty(id, "name", item.name)
-                        Draw.setFeatureProperty(id, "color", item.color)
-
-                        div.classList.remove("selected-farm-feature")
-                        lastSelectedItem = null; // Clear the last selected item after drawing is complete
-                    })
                 })
 
                 const editButton = document.createElement("div")
@@ -1614,14 +1538,32 @@
                             color: item.color,
                         },
                         okCallback: (props) => {
-                            item.name = props.name
+                            console.log('props!!!!!!!!!', props);
+                            // item.name = props.name
+                            // item.color = props.color
+                            //update features
+
+                            appData.farmFeaturesNames.forEach(feature => {
+                                //update feature name
+
+                                console.log('feature.name', feature.name);
+                                console.log('item.name', item.name);
+                                console.log('props.name', props.name);
+
+                                if (feature.name === item.name) {
+                                    feature.name = props.name
+                                    feature.color = props.color
+                                }
+                            })
+                            redrawFarmFeaturesLayer()
                             createFarmFeaturesList()
+
                         },
                         onDeleteCallback: () => {
                             console.log('onDeleteCallback');
                             //remove from array by name with splice method
-                            const index = farmFeaturesNames.findIndex(i => i.name === item.name)
-                            farmFeaturesNames.splice(index, 1)
+                            const index = appData.farmFeaturesNames.findIndex(i => i.name === item.name)
+                            appData.farmFeaturesNames.splice(index, 1)
                             createFarmFeaturesList()
                         }
                     })
@@ -1636,6 +1578,32 @@
 
                 return container
             }
+        }
+
+        function redrawFarmFeaturesLayer() {
+
+            const features = appData.farmFeaturesGEO.map(item => {
+                return {
+                    type: 'Feature',
+                    properties: {
+                        'farm-name': item.name,
+                        'color': item.color
+                    },
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [item.lng, item.lat]
+                    }
+                }
+            })
+
+            console.log('features', features);
+
+            map.getSource('farm-features').setData({
+                type: 'FeatureCollection',
+                features: features
+            })
+
+
         }
 
 
@@ -1700,7 +1668,7 @@
             colorInput.type = 'color';
             colorInput.id = 'head';
             colorInput.name = 'head';
-            colorInput.value = '#e66465';
+            colorInput.value = data?.color || '#000000';
             container.appendChild(colorInput);
 
             container.appendChild(inputName);
@@ -1764,7 +1732,9 @@
             modalContainer.style.display = 'flex';
         }
 
-
+        function generateUID() {
+            return '_' + Math.random().toString(36).substr(2, 9);
+        }
 
     </script>
 
