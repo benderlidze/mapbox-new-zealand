@@ -1535,6 +1535,8 @@
         function createFarmFeaturesList() {
             farmFeaturesListItemsDiv.innerHTML = ""
 
+            let lastSelectedItem = null; // Track the last selected item
+
             appData.farmFeaturesNames.forEach(item => {
                 farmFeaturesListItemsDiv.appendChild(createItem(item))
             })
@@ -1560,6 +1562,11 @@
                         item,
                         div
                     }
+
+                    if (lastSelectedItem && lastSelectedItem !== div) { //compare reference to the last selected item
+                        lastSelectedItem.classList.remove("selected-farm-feature") // Remove the class from the last selected item
+                    }
+                    lastSelectedItem = div; // Update the last selected item
                 })
 
                 const editButton = document.createElement("div")
