@@ -484,8 +484,7 @@
                 { points: [], uid: 19, name: "Offal Hole", color: "" },
                 { points: [], uid: 20, name: "Old Sheep dip", color: "" },
                 { points: [], uid: 21, name: "Private Drinking Water Outlet", color: "" },
-            ],
-            activeFeature: null,
+            ]
         }
 
         const soilClasses = [
@@ -1027,33 +1026,6 @@
             drawPontLayers.forEach(layer => {
                 map.setLayoutProperty(layer, 'visibility', 'none')
             })
-
-
-
-            map.on("click", e => {
-                console.log('e', e);
-
-                if (appData.activeFeature) {
-                    const { item, div } = appData.activeFeature;
-                    const { lat, lng } = e.lngLat
-                    const featureItem = appData.farmFeaturesNames.find(feature =>
-                        feature.name === item.name
-                    )
-                    if (featureItem) {
-                        featureItem.points.push({
-                            uid: generateUID(),
-                            lat,
-                            lng,
-                        })
-                    }
-                    redrawFarmFeaturesLayer()
-                    map.getCanvas().style.cursor = ""
-
-                    appData.activeFeature = null
-                    div.classList.remove("selected-farm-feature")
-                }
-            })
-
         });
 
 
@@ -1535,6 +1507,9 @@
         function createFarmFeaturesList() {
             farmFeaturesListItemsDiv.innerHTML = ""
 
+            let lastSelectedItem = null; // Track the last selected item
+            let currentClickHandler = null;
+
             appData.farmFeaturesNames.forEach(item => {
                 farmFeaturesListItemsDiv.appendChild(createItem(item))
             })
@@ -1552,14 +1527,50 @@
 
                 div.addEventListener("click", () => {
 
-                    console.log('DRAW POINT', item);
-                    map.getCanvas().style.cursor = "crosshair"
-                    div.classList.add("selected-farm-feature") // Add the class to the current item
 
-                    appData.activeFeature = {
-                        item,
-                        div
+                    // Remove the previous click event listener if it exists
+                    if (currentClickHandler) {
+                        map.off("click", currentClickHandler);
                     }
+                    
+                    map.getCanvas().style.cursor = "crosshair"
+
+                    // Create a new click event handler
+                    currentClickHandler = (e) => {
+                        console.log('e', e);
+                        const { lat, lng } = e.lngLat
+
+                        const featureItem = appData.farmFeaturesNames.find(feature =>
+                            feature.name === item.name
+                        )
+                        if (featureItem) {
+                            featureItem.points.push({
+                                uid: generateUID(),
+                                lat,
+                                lng,
+                            })
+                        }
+
+                        redrawFarmFeaturesLayer()
+
+                        div.classList.remove("selected-farm-feature")
+                        lastSelectedItem = null;
+
+                        map.getCanvas().style.cursor = ""
+
+                        // Remove the click event listener after it's been triggered
+                        map.off("click", currentClickHandler);
+                        currentClickHandler = null;
+                    };
+
+                    // Add the new click event listener
+                    map.once("click", currentClickHandler);
+
+                    if (lastSelectedItem) {
+                        lastSelectedItem.classList.remove("selected-farm-feature") // Remove the class from the last selected item
+                    }
+                    div.classList.add("selected-farm-feature") // Add the class to the current item
+                    lastSelectedItem = div; // Update the last selected item
                 })
 
                 const editButton = document.createElement("div")
