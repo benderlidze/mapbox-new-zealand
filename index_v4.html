@@ -66,36 +66,59 @@
         }
 
         #legend {
-            /* Use rgba for transparency */
             border-radius: 10px;
             padding: 10px;
-            width: 300px;
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+        }
 
+        .mapboxgl-ctrl-geocoder {
+            color: white !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            border: 1px solid white !important;
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            border-radius: 10px !important;
+        }
+
+        .mapboxgl-ctrl-geocoder--input {
+            color: white !important;
+        }
+
+        .mapboxgl-ctrl-geocoder--input::placeholder {
+            color: white !important;
+            opacity: 1;
+        }
+
+        .mapboxgl-ctrl-geocoder--icon.mapboxgl-ctrl-geocoder--icon-search {
+            fill: white !important;
+        }
+
+        .mapboxgl-ctrl-geocoder--icon .mapboxgl-ctrl-geocoder--icon-close {
+            fill: white !important;
+        }
+
+        .mapboxgl-ctrl-geocoder--button {
+            background-color: unset !important;
+        }
+
+        .background-blur {
             color: white;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid white;
             background-color: rgba(255, 255, 255, 0.2);
-
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            border-radius: 10px;
         }
 
         .divider-element {
-            border-bottom: 1px solid #ccc;
-            margin-bottom: 10px;
+            border-bottom: 1px solid #cccccc7c;
+            padding: 5px 0px;
         }
 
         .divider-element:last-child {
             border-bottom: none;
-        }
-
-
-        #property {
-            background-color: white;
-            border-radius: 10px;
-            padding: 10px;
         }
 
         #filters {
@@ -206,7 +229,6 @@
         }
 
         #close-controls {
-            background-color: white;
             padding: 10px;
             border-radius: 10px;
             display: none;
@@ -214,16 +236,14 @@
 
         #actions {
             display: flex;
-            flex-direction: row;
-            background-color: white;
+            flex-direction: column;
             border-radius: 10px;
             padding: 10px;
-            gap: 40px;
+            gap: 10px;
         }
 
         #info {
             position: absolute;
-            background-color: white;
             border-radius: 10px;
             padding: 10px;
             z-index: 1000;
@@ -232,14 +252,18 @@
             top: 60px;
             left: 50%;
             transform: translate(-50%, 0);
+
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+
         }
 
         #list {
             display: flex;
             gap: 2px;
             flex-direction: column;
-
-            background-color: white;
             padding: 10px;
             border-radius: 10px;
         }
@@ -255,22 +279,23 @@
             position: relative;
         }
 
-        .bottom {
-            height: 50px;
-            background-color: white;
-            margin: 10px;
+        .actions {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            z-index: 1000;
 
             display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            align-content: center;
-            align-items: center;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .action-button {
-            border: 1px solid #969696;
-            padding: 5px 10px;
-            border-radius: 5px;
+            /* border: 1px solid #969696; */
+            background-color: rgba(255, 255, 255, 0.30);
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
         }
 
         .center-bottom {
@@ -296,19 +321,19 @@
         }
 
         #farm-features-list {
-            background-color: white;
+            display: flex;
+            flex-direction: column;
             padding: 10px;
             border-radius: 10px;
             display: flex;
             flex-direction: column;
-            width: 230px;
+            width: 250px;
             gap: 10px;
         }
 
         #farm-features-list-items {
             display: flex;
             flex-direction: column;
-            gap: 5px;
         }
 
         #modal-container {
@@ -325,7 +350,7 @@
         }
 
         .modal {
-            background: white;
+            background: rgba(255, 255, 255, 0.3);
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -334,13 +359,14 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+            color: white
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #b5b5b5;
             padding-bottom: 10px;
         }
 
@@ -384,14 +410,12 @@
         }
 
         .selected-farm-feature {
-            background-color: #2196f3;
-            color: white;
+            background-color: rgba(255, 255, 255, 0.30)
         }
 
         .selected-farm-item {
             display: flex;
             align-items: center;
-            border: 1px solid #ccc;
             border-radius: 5px;
             padding: 5px;
             cursor: pointer;
@@ -401,7 +425,6 @@
 
         .edit-container {
             cursor: pointer;
-            position: absolute;
             right: 10px;
         }
 
@@ -425,6 +448,47 @@
             background-size: 20px 20px;
             cursor: pointer;
         }
+
+        .save-close-button {
+            display: flex;
+            gap: 10px;
+            background-color: #5bb963;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            justify-content: center;
+            align-items: center;
+            width: fit-content;
+            cursor: pointer;
+            text-wrap: nowrap;
+            user-select: none;
+        }
+
+        .flex-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .overlay-container {
+            position: absolute;
+            /* center */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .select-drop {
+            border-radius: 10px;
+            padding: 10px;
+            border: none;
+            font-size: 16px;
+        }
+
+        .select-drop>option {
+            color: black;
+            background-color: rgba(255, 255, 255, 0.30);
+        }
     </style>
 </head>
 
@@ -438,11 +502,25 @@
 
     <div id="info"></div>
     <div id="panel">
-        <div id="legend"></div>
+        <div id="legend" class="background-blur"></div>
         <div id="list"></div>
-        <div id="farm-features-list">
-            <div id="farm-features-list-menu"></div>
+        <div id="farm-features-list" class="background-blur">
+            <div id="farm-features-list-menu" class="flex-center"></div>
             <div id="farm-features-list-items"></div>
+        </div>
+    </div>
+
+
+    <div class="actions background-blur">
+        <div class="" id="edit-panel">
+            <div id="actions"></div>
+            <div id="load-polygons" class="flex-center"></div>
+        </div>
+        <div class="overlay-container">
+            <div id="property">
+                <div id="property-controls"></div>
+            </div>
+            <div id="close-controls"></div>
         </div>
     </div>
 
@@ -451,18 +529,7 @@
             <div id="geocoder"></div>
             <div id="map"></div>
             <div class="center-bottom">
-                <div id="property">
-                    <div id="property-controls"></div>
-                </div>
-                <div id="close-controls"></div>
-            </div>
-        </div>
-        <div class="bottom" id="edit-panel">
-            <div class="left">
-                <div id="actions"></div>
-            </div>
-            <div class="right">
-                <div id="load-polygons"></div>
+
             </div>
         </div>
     </div>
@@ -620,7 +687,11 @@
                 return;
             }
 
+            infoDiv.classList = "background-blur";
             infoDiv.innerHTML = "";
+            infoDiv.style.display = "none";
+
+
             const selectedPolygon = Draw.getSelected().features[0];
 
             if (!selectedPolygon) return;
@@ -636,6 +707,7 @@
 
                 console.log("Creating element");
                 const dropDown = document.createElement("select");
+                dropDown.classList = "select-drop background-blur";
                 dropDown.innerHTML =
                     `
                     <option selected disabled value="">Select option</option>` +
@@ -661,19 +733,24 @@
                 });
 
                 infoDiv.appendChild(dropDown);
+                infoDiv.style.display = "flex";
 
                 const areaText = document.createElement("div");
                 areaText.innerText = polyArea(selectedPolygon);
                 infoDiv.appendChild(areaText);
 
                 const selectCustomColor = document.createElement("div");
-                selectCustomColor.style =
-                    "cursor:pointer; border:1px solid gray; padding:5px; margin-top:5px; border-radius:5px; text-align:center;";
+                selectCustomColor.classList = "save-close-button";
                 selectCustomColor.textContent = "Add option";
+
 
                 selectCustomColor.addEventListener("click", () => {
                     showModal({
                         title: "Set custom option",
+                        editableOptions: {
+                            name: true,
+                            color: true,
+                        },
                         okCallback: () => {
                             //rebuild/update the drop down container with new custom value
                             dropDown.innerHTML =
@@ -1149,8 +1226,6 @@
             });
         });
 
-        const divLock = document.createElement("div");
-        //divLock.style = "display:flex; border:1px solid red;"
         const property = buildSwitcher(
             "Property",
             (checked) => {
@@ -1170,9 +1245,7 @@
             true
         );
 
-        divLock.appendChild(property.div);
-        //divLock.appendChild(lockProperty.div)
-        switchersEnableDiv.appendChild(divLock);
+        switchersEnableDiv.appendChild(property.div);
 
         const aspect = buildSwitcher(
             "Aspect",
@@ -1361,7 +1434,8 @@
         }
 
         function buildLoadPolygonsButton() {
-            const loadButton = document.createElement("button");
+            const loadButton = document.createElement("div");
+            loadButton.className = "save-close-button";
             loadButton.innerText = "Load";
             loadButton.addEventListener("click", () => {
                 const appPolygonsData = localStorage.getItem("appPolygonsData");
@@ -1372,12 +1446,12 @@
                     updatePolygonInfoTab();
                 }
             });
-
             loadPolygons.appendChild(loadButton);
         }
 
         function updatePolygonInfoTab() {
             propertyListDiv.innerHTML = "";
+            propertyListDiv.className = "background-blur"
 
             const polygons = Draw.getAll().features;
             polygons.forEach((poly) => {
@@ -1408,6 +1482,7 @@
                 deleteIcon.src = "icons/rubbish-bin-svgrepo-com.svg";
                 deleteIcon.style.width = "20px";
                 deleteIcon.style.height = "20px";
+                deleteIcon.style.filter = "invert(1)";
                 deleteButton.addEventListener("click", () => {
                     Draw.delete(poly.id);
                     updatePolygonInfoTab();
@@ -1422,6 +1497,8 @@
                 editIcon.src = "icons/edit-3-svgrepo-com.svg";
                 editIcon.style.width = "20px";
                 editIcon.style.height = "20px";
+                editIcon.style.filter = "invert(1)";
+
                 editIcon.addEventListener("click", () => {
                     Draw.changeMode("direct_select", { featureId: poly.id });
                     currentMode = "direct_select";
@@ -1431,6 +1508,7 @@
                     saveAndLoadDiv.style.display = "flex";
 
                     editMode(true);
+                    infoDiv.style.display = "flex";
                 });
                 editButton.appendChild(editIcon);
 
@@ -1491,8 +1569,9 @@
         }
 
         function loadPropertyControls() {
-            const saveButton = document.createElement("button");
+            const saveButton = document.createElement("div");
             saveButton.innerText = "Save & Close";
+            saveButton.className = "save-close-button";
             saveButton.addEventListener("click", () => {
                 if (selectedBasePolygons) {
                     localStorage.setItem(
@@ -1528,8 +1607,9 @@
             propertyControlsDiv.appendChild(saveButton);
             // propertyControlsDiv.appendChild(loadButton)
 
-            const closeButton = document.createElement("button");
+            const closeButton = document.createElement("div");
             closeButton.innerText = "Close";
+            closeButton.className = "save-close-button";
             closeButton.addEventListener("click", () => {
                 Draw.changeMode(Draw.modes.SIMPLE_SELECT);
                 currentMode = "simple_select";
@@ -1558,12 +1638,6 @@
             div.addEventListener("click", () => {
                 if (typeof callback === "function") callback();
             });
-
-            const image = document.createElement("img");
-            image.src = "icons/edit.svg";
-            image.style.width = "20px";
-            image.style.height = "20px";
-            div.appendChild(image);
 
             const text = document.createElement("span");
             text.innerText = name;
@@ -1629,11 +1703,9 @@
         }
 
         const div = document.createElement("div");
-        div.className = "selected-farm-item";
+        div.className = "action-button width-fit";
         div.style.justifyContent = "center";
-        const text = document.createElement("b");
-        text.innerText = "Create New Feature";
-        div.appendChild(text);
+        div.innerText = "+ Create New Feature";
         div.addEventListener("click", () => {
             showModal({
                 title: "Set custom option",
@@ -1675,9 +1747,10 @@
             function createItem(item) {
                 const container = document.createElement("div");
                 container.style.display = "flex";
+                container.className = "divider-element";
 
                 const div = document.createElement("div");
-                div.className = "selected-farm-item";
+                div.className = "selected-farm-item ";
                 const text = document.createElement("span");
                 text.innerText = " + " + item.name;
                 div.appendChild(text);
@@ -1685,18 +1758,18 @@
                 div.addEventListener("click", () => {
                     console.log("DRAW POINT", item);
                     map.getCanvas().style.cursor = "crosshair";
-                    div.classList.add("selected-farm-feature"); // Add the class to the current item
+                    container.classList.add("selected-farm-feature"); // Add the class to the current item
 
                     appData.activeFeature = {
                         item,
                         div,
                     };
 
-                    if (lastSelectedItem && lastSelectedItem !== div) {
+                    if (lastSelectedItem && lastSelectedItem !== container) {
                         //compare reference to the last selected item
                         lastSelectedItem.classList.remove("selected-farm-feature"); // Remove the class from the last selected item
                     }
-                    lastSelectedItem = div; // Update the last selected item
+                    lastSelectedItem = container; // Update the last selected item
                 });
 
                 const editButton = document.createElement("div");
@@ -1897,8 +1970,8 @@
             const modalButtons = document.createElement("div");
             modalButtons.className = "modal-buttons";
 
-            const okButton = document.createElement("button");
-            okButton.className = "modal-button";
+            const okButton = document.createElement("div");
+            okButton.className = "save-close-button";
             okButton.innerText = "OK";
             okButton.onclick = () => {
                 soilClasses.push({
@@ -1914,8 +1987,8 @@
                 modalContainer.innerHTML = ""; // Clear the modal content
             };
 
-            const cancelButton = document.createElement("button");
-            cancelButton.className = "modal-button cancel";
+            const cancelButton = document.createElement("div");
+            cancelButton.className = "save-close-button";
             cancelButton.innerText = "Cancel";
             cancelButton.onclick = () => {
                 if (typeof cancelCallback === "function") {
