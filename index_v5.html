@@ -85,7 +85,6 @@
             display: flex;
             flex-direction: column;
             gap: 5px;
-            width: 300px;
         }
 
         #legend {
@@ -123,6 +122,12 @@
 
         .mapboxgl-ctrl-geocoder--button {
             background-color: unset !important;
+        }
+
+        @media screen and (min-width: 640px) {
+            .mapboxgl-ctrl-geocoder {
+                width: 150% !important;
+            }
         }
 
         .background-blur {
@@ -517,6 +522,21 @@
             margin-top: 10px;
             margin-left: 10px;
         }
+
+        .pannel-width {
+            width: 300px;
+            box-sizing: border-box;
+        }
+
+        #bottom-right {
+            position: absolute;
+            bottom: 30px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
     </style>
 </head>
 
@@ -530,12 +550,12 @@
 
     <div id="info"></div>
     <div id="panel">
-        <div class="background-blur">
+        <div class="background-blur pannel-width">
             <div class="window-title">Filters</div>
             <div id="legend"></div>
         </div>
 
-        <div class="actions background-blur" id="actions-pannel">
+        <div class="actions background-blur pannel-width" id="actions-pannel">
             <div id="edit-panel">
                 <div class="window-title">Actions</div>
                 <div id="actions"></div>
@@ -548,14 +568,14 @@
                 <div id="close-controls"></div>
             </div>
         </div>
-
-
         <div id="list"></div>
-        <div id="farm-features-list" class="background-blur">
+        <div id="farm-features-list" class="background-blur pannel-width">
             <div id="farm-features-list-menu" class="flex-center"></div>
             <div id="farm-features-list-items"></div>
         </div>
     </div>
+
+    <div id="bottom-right"></div>
 
     <div class="main">
         <div class="top">
@@ -572,6 +592,7 @@
 
         let currentMode = "simple_select";
         const infoDiv = document.getElementById("info");
+        const bottomRightDiv = document.getElementById("bottom-right");
         const actionsListDiv = document.getElementById("actions");
         const loadPolygons = document.getElementById("load-polygons");
 
@@ -1227,7 +1248,9 @@
                 // }).join("</br>")
             });
             loadPropertyControls();
-            buildLoadPolygonsButton();
+
+            const loadButton = buildLoadPolygonsButton();
+            bottomRightDiv.appendChild(loadButton);
 
             drawPontLayers.forEach((layer) => {
                 map.setLayoutProperty(layer, "visibility", "none");
@@ -1473,14 +1496,19 @@
             loadButton.innerText = "Load";
             loadButton.addEventListener("click", () => {
                 const appPolygonsData = localStorage.getItem("appPolygonsData");
-                if (appPolygonsData) {
-                    const polygonsArray = JSON.parse(appPolygonsData);
+                const json = JSON.parse(appPolygonsData)
+
+                if (json && json.features.length > 0) {
+                    const polygonsArray = json
                     console.log("polygonsArray", polygonsArray);
                     Draw.add(polygonsArray);
                     updatePolygonInfoTab();
+                } else {
+                    console.warn("No polygons found in local storage")
                 }
             });
-            loadPolygons.appendChild(loadButton);
+            // loadPolygons.appendChild(loadButton);
+            return loadButton;
         }
 
         function updatePolygonInfoTab() {
@@ -1621,8 +1649,9 @@
                 farmFeaturesListDiv.style.display = "none";
                 saveAndLoadDiv.style.display = "none";
                 editMode(false);
-                
-                actionsPannel.style.display = "none";
+
+                actionsPannel.style.display = "flex";
+                infoDiv.style.display = "none";
             });
             return saveButton;
         }
@@ -1758,8 +1787,6 @@
             });
         });
 
-        const saveButton = createSaveButton();
-        farmFeaturesListMenuDiv.appendChild(saveButton);
 
         farmFeaturesListMenuDiv.appendChild(div);
 
@@ -1773,6 +1800,19 @@
             appData.farmFeaturesNames.forEach((item) => {
                 farmFeaturesListItemsDiv.appendChild(createItem(item));
             });
+
+            const saveContainer = document.createElement("div");
+            saveContainer.style.display = "flex";
+            saveContainer.style.justifyContent = "center";
+            saveContainer.style.marginTop = "10px";
+            // saveContainer.style.position = "absolute";
+            // saveContainer.style.bottom = "0";
+            // saveContainer.style.left = "50%"
+            // saveContainer.style.transform = "translateX(-50%)"
+
+            const saveButton = createSaveButton();
+            saveContainer.appendChild(saveButton);
+            farmFeaturesListItemsDiv.appendChild(saveContainer);
 
             function createItem(item) {
                 const container = document.createElement("div");
