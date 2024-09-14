@@ -1253,8 +1253,8 @@
             });
             loadPropertyControls();
 
-            const loadButton = buildLoadPolygonsButton();
-            bottomRightDiv.appendChild(loadButton);
+            // const loadButton = buildLoadPolygonsButton();
+            // bottomRightDiv.appendChild(loadButton);
 
             drawPontLayers.forEach((layer) => {
                 map.setLayoutProperty(layer, "visibility", "none");
@@ -1397,6 +1397,38 @@
         );
         switchersEnableDiv.appendChild(stockExclusion.div);
 
+
+        const landUnits = buildSwitcher(
+            "Land Units",
+            (checked) => {
+                console.log('LOAD',);
+
+                if (checked) {
+                    propertyListDiv.style.display = "flex";
+
+                    const appPolygonsData = localStorage.getItem("appPolygonsData");
+                    const json = JSON.parse(appPolygonsData)
+                    if (json && json.features.length > 0) {
+                        const polygonsArray = json
+                        console.log("polygonsArray", polygonsArray);
+                        Draw.add(polygonsArray);
+                        updatePolygonInfoTab();
+                    } else {
+                        console.warn("No polygons found in local storage")
+                    }
+                } else {
+                    Draw.deleteAll();
+                    updatePolygonInfoTab();
+
+                    propertyListDiv.style.display = "none";
+                }
+
+            },
+            false,
+            false
+        );
+        switchersEnableDiv.appendChild(landUnits.div);
+
         // const soil = buildSwitcher("Soil", checked => {
         //     const display = checked ? "visible" : "none"
         //     map.setLayoutProperty('soil-data', 'visibility', display);
@@ -1428,8 +1460,6 @@
                 callback: () => {
                     lockProperty.turnOn();
                     property.turnOn();
-                    //landUse.turnOn()
-                    //disable interactivity for landUse layer
                     drawControllVisible(true);
 
                     changeCursor("");
@@ -1439,6 +1469,19 @@
                     saveAndLoadDiv.style.display = "flex";
 
                     editMode(true);
+
+                    landUnits.turnOn();//!!
+
+                    const appPolygonsData = localStorage.getItem("appPolygonsData");
+                    const json = JSON.parse(appPolygonsData)
+                    if (json && json.features.length > 0) {
+                        const polygonsArray = json
+                        console.log("polygonsArray", polygonsArray);
+                        Draw.add(polygonsArray);
+                        updatePolygonInfoTab();
+                    } else {
+                        console.warn("No polygons found in local storage")
+                    }
                 },
             })
         );
@@ -1525,10 +1568,12 @@
                 if (area <= 0) return; //skip empty polygons
 
                 const div = document.createElement("div");
+                div.className = "divider-element";
                 div.style.display = "flex";
-                div.style.alignItems = "center";
-                div.style.gap = "15px";
-                div.style.justifyContent = "space-between";
+                div.style.alignItems = "flex-start";
+                div.style.gap = "5px";
+                div.style.flexDirection = "column";
+                // div.style.justifyContent = "space-between";
 
                 const color = document.createElement("div");
                 color.style.backgroundColor = poly.properties.color;
@@ -1552,7 +1597,6 @@
                 deleteButton.addEventListener("click", () => {
                     Draw.delete(poly.id);
                     updatePolygonInfoTab();
-
                     saveAndLoadDiv.style.display = "flex";
                 });
                 deleteButton.appendChild(deleteIcon);
@@ -1582,10 +1626,13 @@
                 left.className = "flex-nowrap";
                 left.appendChild(color);
                 left.appendChild(text);
-                left.appendChild(areaDiv);
 
                 const right = document.createElement("div");
-                right.className = "flex-nowrap";
+                right.style.display = "flex";
+                right.style.flexDirection = "row";
+                right.style.gap = "10px";
+
+                right.appendChild(areaDiv);
                 right.appendChild(editButton);
                 right.appendChild(deleteButton);
 
