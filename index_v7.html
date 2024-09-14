@@ -79,12 +79,14 @@
 
         #panel {
             position: absolute;
-            top: 10px;
-            left: 10px;
             z-index: 1000;
             display: flex;
             flex-direction: column;
             gap: 5px;
+            height: 100vh;
+
+            box-sizing: border-box;
+            padding: 5px;
         }
 
         #legend {
@@ -163,6 +165,7 @@
             align-items: center;
             flex-direction: row-reverse;
             justify-content: space-between;
+            user-select: none;
         }
 
         .switcher-div>div {
@@ -345,21 +348,19 @@
 
         #farm-features-list {
             display: flex;
+            flex: 1;
             flex-direction: column;
             padding: 10px;
             border-radius: 10px;
-            display: flex;
-            flex-direction: column;
             gap: 10px;
+            min-height: 200px;
         }
 
         #farm-features-list-items {
             display: flex;
             flex-direction: column;
-
-            max-height: 400px;
             overflow-y: auto;
-
+            flex: 1;
         }
 
         #modal-container {
@@ -519,7 +520,6 @@
         .window-title {
             font-size: 20px;
             font-weight: semibold;
-            margin-top: 10px;
             margin-left: 10px;
         }
 
@@ -537,6 +537,37 @@
             flex-direction: column;
             gap: 10px;
         }
+
+        .title-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .expand-circle {
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.30);
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        /* plus */
+        .plus-expand-circle:after {
+            content: '\FF0B';
+            font-size: 20px;
+        }
+
+        /* minus */
+        .minus-expand-circle:after {
+            content: '\FF0D';
+            font-size: 20px;
+        }
     </style>
 </head>
 
@@ -551,7 +582,13 @@
     <div id="info"></div>
     <div id="panel">
         <div class="background-blur pannel-width">
-            <div class="window-title">Filters</div>
+            <div class="title-container">
+                <div class="window-title">
+                    Filters
+                </div>
+                <div id="expand" class="expand-circle minus-expand-circle"></div>
+            </div>
+
             <div id="legend"></div>
         </div>
 
@@ -618,6 +655,20 @@
 
         const editPanel = document.getElementById("edit-panel");
         const switchersEnableDiv = document.getElementById("legend");
+        const expandDiv = document.getElementById("expand");
+        expandDiv.addEventListener("click", () => {
+            const isExpanded = expandDiv.classList.contains("minus-expand-circle");
+            if (isExpanded) {
+                expandDiv.classList.remove("minus-expand-circle");
+                expandDiv.classList.add("plus-expand-circle");
+                switchersEnableDiv.style.display = "none";
+            } else {
+                expandDiv.classList.remove("plus-expand-circle");
+                expandDiv.classList.add("minus-expand-circle");
+                switchersEnableDiv.style.display = "flex";
+            }
+        });
+
         // const soilClasses = ["RFM", "RFW", "UEP", "GOA", "LOV", "LOT", "ZOH", "ZOT", "BOA", "WT", "BOM", "RTB", "LOA", "LIM", "ROT", "ROW", "BOT", "MOBL", "GOT", "BAP", "WX", "ice", "rive", "BAT", "PXM", "BFT", "town", "PIT", "BLA", "UEM", "UYT", "WF", "MOZ", "ZPT", "WS", "RST", "NXT", "ZXP", "RTT", "LOVA", "BLT", "LGT", "MOT", "PPU", "MOI", "NOA", "BOP", "BXT", "XOT", "BAM", "ZDH", "NOM", "UPS", "estu", "BLAD", "BAO", "BST", "GAP", "GRQ", "PPJX", "OMA", "PID", "NOT", "ZPH", "PJM", "BLX", "lake", "BLD", "GRT", "GSC", "PIM", "GOE", "RFT", "PJT", "PPJ", "ERT", "LPT", "BFL", "BMT", "GUFQ", "UST", "EOJC", "MIW", "RFAW", "BFA", "BMG", "PXJN", "BOC", "WO", "BMM", "BSA", "AFST", "BOH", "SIT", "EMT", "SAT", "UEY", "GAT", "ZPZ", "UPT", "GUF", "EOM", "OHM", "PPX", "PLT", "EOJ", "UYM", "LIT", "OHA", "RTM", "PJA", "PJN", "SAH", "SJT", "PXMC", "GSO", "MOBA", "BSM", "GST", "BFM", "RSM", "ERW", "PXJ", "MOM", "BMA", "PXJM", "SJQ", "RXT", "OMM", "RTBP", "GOO", "EMG", "XPT", "ROA", "ZXF", "EOT", "ZXQ", "EOC", "BFMA", "ZXH", "WGFU", "UDP", "NXM", "XNT", "OFA", "PPT", "ROM", "PLM", "quar", "BFP", "ZPP", "ZGT", "NPT", "MOL", "RFA", "WST", "PXJC", "SAM", "OFS", "BFC", "ZXU", "BLM", "GOC", "ROAW", "ATT", "RFMA", "BFAL", "NPA", "GAO", "UDM", "SAW", "MOBT", "EPT", "GRA", "WH", "BOI", "MIM", "RTBL", "PUM", "EODC", "EVT", "SJM", "BOMA", "MPT", "NXA", "BLAM", "MIT", "RTBA", "WHA", "GRO", "ZPU", "PJC", "EVM", "PXT", "EMM", "ZPOZ", "RFMQ", "PPF", "GOM", "ERO", "GOP", "RF?", "WGF", "BSP", "SJL"]
 
         const appData = {
