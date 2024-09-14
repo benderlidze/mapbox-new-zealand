@@ -83,7 +83,7 @@
             display: flex;
             flex-direction: column;
             gap: 5px;
-            height: 100vh;
+            max-height: 100vh;
 
             box-sizing: border-box;
             padding: 5px;
@@ -594,7 +594,13 @@
 
         <div class="actions background-blur pannel-width" id="actions-pannel">
             <div id="edit-panel">
-                <div class="window-title">Actions</div>
+                <div class="title-container">
+                    <div class="window-title">
+                        Actions
+                    </div>
+                    <div id="expand-actions" class="expand-circle minus-expand-circle"></div>
+                </div>
+
                 <div id="actions"></div>
                 <div id="load-polygons" class="flex-center"></div>
             </div>
@@ -666,6 +672,20 @@
                 expandDiv.classList.remove("plus-expand-circle");
                 expandDiv.classList.add("minus-expand-circle");
                 switchersEnableDiv.style.display = "flex";
+            }
+        });
+
+        const expandActionsDiv = document.getElementById("expand-actions");
+        expandActionsDiv.addEventListener("click", () => {
+            const isExpanded = expandActionsDiv.classList.contains("minus-expand-circle");
+            if (isExpanded) {
+                expandActionsDiv.classList.remove("minus-expand-circle");
+                expandActionsDiv.classList.add("plus-expand-circle");
+                actionsListDiv.style.display = "none";
+            } else {
+                expandActionsDiv.classList.remove("plus-expand-circle");
+                expandActionsDiv.classList.add("minus-expand-circle");
+                actionsListDiv.style.display = "flex";
             }
         });
 
