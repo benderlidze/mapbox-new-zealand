@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css"
         type="text/css" />
 
-    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
 
     <!-- Include Proj4js library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js"></script>
@@ -1322,25 +1322,22 @@
 
             function updateSelectedPolygonsBorder() {
 
+
+                if (appData.selectedBasePolygons.length <= 1) return;
+                console.log('!!!!!!!!!!!!',);
                 //create a buffer 
                 const buffer = appData.selectedBasePolygons.map(polygon => {
-                    return turf.buffer(polygon.geometry, 10, { units: "meters" });
+                    return turf.buffer(polygon.geometry, 30, { units: "meters" });
                 })
 
-                //join intersected polygons
-                const union = turf.union(...buffer);
+                console.log('buffer', buffer);
 
-                console.log('buffer', JSON.stringify({
-                    type: "FeatureCollection",
-                    features: buffer
-                }));
+                //join intersected polygons
+                const union = turf.union(turf.featureCollection([...buffer]));
 
                 console.log('union', JSON.stringify(union));
 
-                map.getSource("outlines").setData({
-                    type: "FeatureCollection",
-                    features: buffer
-                });
+                map.getSource("outlines").setData(union);
 
             }
 
