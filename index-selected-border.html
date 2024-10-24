@@ -1,0 +1,2233 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Add a new layer to a slot</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css"
+        type="text/css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+
+    <!-- Include Proj4js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js"></script>
+    <script src="js/nztm2000.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet">
+
+
+    <style>
+        /* width */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        /* Track */
+        ::-webkit-scrollbar-track {
+            box-shadow: inset 0 0 5px grey;
+            border-radius: 10px;
+        }
+
+        /* Handle */
+        ::-webkit-scrollbar-thumb {
+            background: rgb(126, 125, 125);
+            border-radius: 10px;
+        }
+
+        /* Handle on hover */
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        .mapboxgl-ctrl-top-center {
+            top: 0;
+            left: 50%;
+            position: absolute;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .mapboxgl-ctrl-top-center .mapboxgl-ctrl {
+            margin: 10px 0 0 10px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+
+            font-family: "Inter", sans-serif;
+            font-optical-sizing: auto;
+            font-weight: 300;
+            font-style: normal;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        #panel {
+            position: absolute;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            max-height: 100vh;
+
+            box-sizing: border-box;
+            padding: 5px;
+        }
+
+        #legend {
+            border-radius: 10px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mapboxgl-ctrl-geocoder {
+            color: white !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            border: 1px solid white !important;
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            border-radius: 10px !important;
+        }
+
+        .mapboxgl-ctrl-geocoder--input {
+            color: white !important;
+        }
+
+        .mapboxgl-ctrl-geocoder--input::placeholder {
+            color: white !important;
+            opacity: 1;
+        }
+
+        .mapboxgl-ctrl-geocoder--icon.mapboxgl-ctrl-geocoder--icon-search {
+            fill: white !important;
+        }
+
+        .mapboxgl-ctrl-geocoder--icon .mapboxgl-ctrl-geocoder--icon-close {
+            fill: white !important;
+        }
+
+        .mapboxgl-ctrl-geocoder--button {
+            background-color: unset !important;
+        }
+
+        @media screen and (min-width: 640px) {
+            .mapboxgl-ctrl-geocoder {
+                width: 150% !important;
+            }
+        }
+
+        .background-blur {
+            color: white;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid white;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .divider-element {
+            border-bottom: 1px solid #cccccc7c;
+            padding: 5px 0px;
+        }
+
+        .divider-element:last-child {
+            border-bottom: none;
+        }
+
+        #filters {
+            background-color: white;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            border-radius: 20px;
+            z-index: 10;
+            padding: 10px;
+        }
+
+        .switcher-div {
+            display: flex;
+            align-items: center;
+            flex-direction: row-reverse;
+            justify-content: space-between;
+            user-select: none;
+        }
+
+        .switcher-div>div {
+            margin-left: 5px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 55px;
+            /* Rounded up */
+            height: 31px;
+            /* Rounded up */
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 24px;
+            /* Rounded up */
+            width: 24px;
+            /* Rounded up */
+            left: 4px;
+            /* Rounded up */
+            bottom: 4px;
+            /* Rounded up */
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        input:checked+.slider {
+            background-color: #5bb963;
+        }
+
+        input:focus+.slider {
+            box-shadow: 0 0 1px #5bb963;
+        }
+
+        input:checked+.slider:before {
+            -webkit-transform: translateX(24px);
+            /* Rounded up */
+            -ms-transform: translateX(24px);
+            /* Rounded up */
+            transform: translateX(24px);
+            /* Rounded up */
+        }
+
+        /* Rounded sliders */
+        .slider.round {
+            border-radius: 31px;
+            /* Rounded up */
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+
+
+        #loading {
+            background-color: white;
+            position: absolute;
+            border-radius: 10px;
+            z-index: 10;
+            padding: 20px;
+            font-size: 20px;
+
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #property-controls {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+        }
+
+        #close-controls {
+            padding: 10px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        #actions {
+            display: flex;
+            flex-direction: column;
+            border-radius: 10px;
+            padding: 10px;
+            gap: 10px;
+        }
+
+        #info {
+            position: absolute;
+            border-radius: 10px;
+            padding: 10px;
+            z-index: 1000;
+
+            /* center screen */
+            top: 60px;
+            left: 50%;
+            transform: translate(-50%, 0);
+
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+
+        }
+
+        #list {
+            display: flex;
+            gap: 2px;
+            flex-direction: column;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .main {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .top {
+            flex: 1;
+            position: relative;
+        }
+
+        .actions {
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .action-button {
+            /* border: 1px solid #969696; */
+            background-color: rgba(255, 255, 255, 0.30);
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .center-bottom {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translate(-50%, 0);
+        }
+
+        #geocoder {
+            position: absolute;
+            top: 20px;
+            z-index: 1000;
+            left: 50%;
+            transform: translate(-50%, 0);
+        }
+
+        .flex-nowrap {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            flex-wrap: nowrap;
+        }
+
+        #farm-features-list {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            padding: 10px;
+            border-radius: 10px;
+            gap: 10px;
+            min-height: 200px;
+        }
+
+        #farm-features-list-items {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        #modal-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: fit-content;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            color: white
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #b5b5b5;
+            padding-bottom: 10px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            margin: 0;
+        }
+
+        .modal-content {
+            font-size: 16px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 5px;
+        }
+
+        .modal-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+            flex: 1;
+        }
+
+        .modal-button:hover {
+            background: #0056b3;
+        }
+
+        .modal-button.cancel {
+            background: #6c757d;
+        }
+
+        .modal-button.cancel:hover {
+            background: #5a6268;
+        }
+
+        .selected-farm-feature {
+            background-color: rgba(255, 255, 255, 0.30)
+        }
+
+        .selected-farm-item {
+            display: flex;
+            align-items: center;
+            border-radius: 5px;
+            padding: 5px;
+            cursor: pointer;
+            user-select: none;
+            flex: 1;
+        }
+
+        .edit-container {
+            cursor: pointer;
+            right: 10px;
+        }
+
+        .edit-container:after {
+            content: "\2807";
+            font-size: 20px;
+        }
+
+        .delete-button {
+            border: 1px solid red;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 10px;
+            border-radius: 5px;
+            background-color: red;
+            background-image: url(icons/rubbish-white.svg);
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 20px;
+            background-size: 20px 20px;
+            cursor: pointer;
+        }
+
+        .save-close-button {
+            display: flex;
+            gap: 10px;
+            background-color: #5bb963;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            justify-content: center;
+            align-items: center;
+            width: fit-content;
+            cursor: pointer;
+            text-wrap: nowrap;
+            user-select: none;
+        }
+
+        .flex-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .overlay-container {
+            position: absolute;
+            /* center */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .select-drop {
+            border-radius: 10px;
+            padding: 10px;
+            border: none;
+            font-size: 16px;
+        }
+
+        .select-drop>option {
+            color: black;
+            background-color: rgba(255, 255, 255, 0.30);
+        }
+
+        .window-title {
+            font-size: 20px;
+            font-weight: semibold;
+            margin-left: 10px;
+        }
+
+        .pannel-width {
+            width: 300px;
+            box-sizing: border-box;
+        }
+
+        #bottom-right {
+            position: absolute;
+            bottom: 30px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .title-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .expand-circle {
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.30);
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        /* plus */
+        .plus-expand-circle:after {
+            content: '\FF0B';
+            font-size: 20px;
+        }
+
+        /* minus */
+        .minus-expand-circle:after {
+            content: '\FF0D';
+            font-size: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Load the `mapbox-gl-geocoder` plugin. -->
+    <script
+        src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+    <link rel="stylesheet"
+        href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css"
+        type="text/css" />
+
+    <div id="info"></div>
+    <div id="panel">
+        <div class="background-blur pannel-width">
+            <div class="title-container">
+                <div class="window-title">
+                    Filters
+                </div>
+                <div id="expand" class="expand-circle minus-expand-circle"></div>
+            </div>
+
+            <div id="legend"></div>
+        </div>
+
+        <div class="actions background-blur pannel-width" id="actions-pannel">
+            <div id="edit-panel">
+                <div class="title-container">
+                    <div class="window-title">
+                        Actions
+                    </div>
+                    <div id="expand-actions" class="expand-circle minus-expand-circle"></div>
+                </div>
+
+                <div id="actions"></div>
+                <div id="load-polygons" class="flex-center"></div>
+            </div>
+            <div class="overlay-container">
+                <div id="property">
+                    <div id="property-controls"></div>
+                </div>
+                <div id="close-controls"></div>
+            </div>
+        </div>
+        <div id="list"></div>
+        <div id="farm-features-list" class="background-blur pannel-width">
+            <div id="farm-features-list-menu" class="flex-center"></div>
+            <div id="farm-features-list-items"></div>
+            <div id="farm-features-list-buttons"></div>
+        </div>
+    </div>
+
+    <div id="bottom-right"></div>
+
+    <div class="main">
+        <div class="top">
+            <div id="geocoder"></div>
+            <div id="map"></div>
+            <div class="center-bottom"></div>
+        </div>
+    </div>
+    <div id="modal-container"></div>
+
+    <script>
+        let lockPropertyFromClick = true; //init
+        let landUseClickLock = true; //init
+
+        let currentMode = "simple_select";
+        const infoDiv = document.getElementById("info");
+        const bottomRightDiv = document.getElementById("bottom-right");
+        const actionsListDiv = document.getElementById("actions");
+        const loadPolygons = document.getElementById("load-polygons");
+
+        const farmFeaturesListDiv = document.getElementById("farm-features-list");
+        farmFeaturesListDiv.style.display = "none";
+        const farmFeaturesListItemsDiv = document.getElementById(
+            "farm-features-list-items"
+        );
+        const farmFeaturesListButtonsDiv = document.getElementById(
+            "farm-features-list-buttons"
+        );
+        const farmFeaturesListMenuDiv = document.getElementById(
+            "farm-features-list-menu"
+        );
+
+        const actionsPannel = document.getElementById("actions-pannel");
+        const propertyListDiv = document.getElementById("list");
+        const propertyControlsDiv = document.getElementById("property-controls");
+        const closeControl = document.getElementById("close-controls");
+        const saveAndLoadDiv = document.getElementById("property");
+        saveAndLoadDiv.style.display = "none";
+
+        const editPanel = document.getElementById("edit-panel");
+        const switchersEnableDiv = document.getElementById("legend");
+        const expandDiv = document.getElementById("expand");
+        expandDiv.addEventListener("click", () => {
+            const isExpanded = expandDiv.classList.contains("minus-expand-circle");
+            if (isExpanded) {
+                expandDiv.classList.remove("minus-expand-circle");
+                expandDiv.classList.add("plus-expand-circle");
+                switchersEnableDiv.style.display = "none";
+            } else {
+                expandDiv.classList.remove("plus-expand-circle");
+                expandDiv.classList.add("minus-expand-circle");
+                switchersEnableDiv.style.display = "flex";
+            }
+        });
+
+        const expandActionsDiv = document.getElementById("expand-actions");
+        expandActionsDiv.addEventListener("click", () => {
+            const isExpanded = expandActionsDiv.classList.contains("minus-expand-circle");
+            if (isExpanded) {
+                expandActionsDiv.classList.remove("minus-expand-circle");
+                expandActionsDiv.classList.add("plus-expand-circle");
+                actionsListDiv.style.display = "none";
+            } else {
+                expandActionsDiv.classList.remove("plus-expand-circle");
+                expandActionsDiv.classList.add("minus-expand-circle");
+                actionsListDiv.style.display = "flex";
+            }
+        });
+
+        // const soilClasses = ["RFM", "RFW", "UEP", "GOA", "LOV", "LOT", "ZOH", "ZOT", "BOA", "WT", "BOM", "RTB", "LOA", "LIM", "ROT", "ROW", "BOT", "MOBL", "GOT", "BAP", "WX", "ice", "rive", "BAT", "PXM", "BFT", "town", "PIT", "BLA", "UEM", "UYT", "WF", "MOZ", "ZPT", "WS", "RST", "NXT", "ZXP", "RTT", "LOVA", "BLT", "LGT", "MOT", "PPU", "MOI", "NOA", "BOP", "BXT", "XOT", "BAM", "ZDH", "NOM", "UPS", "estu", "BLAD", "BAO", "BST", "GAP", "GRQ", "PPJX", "OMA", "PID", "NOT", "ZPH", "PJM", "BLX", "lake", "BLD", "GRT", "GSC", "PIM", "GOE", "RFT", "PJT", "PPJ", "ERT", "LPT", "BFL", "BMT", "GUFQ", "UST", "EOJC", "MIW", "RFAW", "BFA", "BMG", "PXJN", "BOC", "WO", "BMM", "BSA", "AFST", "BOH", "SIT", "EMT", "SAT", "UEY", "GAT", "ZPZ", "UPT", "GUF", "EOM", "OHM", "PPX", "PLT", "EOJ", "UYM", "LIT", "OHA", "RTM", "PJA", "PJN", "SAH", "SJT", "PXMC", "GSO", "MOBA", "BSM", "GST", "BFM", "RSM", "ERW", "PXJ", "MOM", "BMA", "PXJM", "SJQ", "RXT", "OMM", "RTBP", "GOO", "EMG", "XPT", "ROA", "ZXF", "EOT", "ZXQ", "EOC", "BFMA", "ZXH", "WGFU", "UDP", "NXM", "XNT", "OFA", "PPT", "ROM", "PLM", "quar", "BFP", "ZPP", "ZGT", "NPT", "MOL", "RFA", "WST", "PXJC", "SAM", "OFS", "BFC", "ZXU", "BLM", "GOC", "ROAW", "ATT", "RFMA", "BFAL", "NPA", "GAO", "UDM", "SAW", "MOBT", "EPT", "GRA", "WH", "BOI", "MIM", "RTBL", "PUM", "EODC", "EVT", "SJM", "BOMA", "MPT", "NXA", "BLAM", "MIT", "RTBA", "WHA", "GRO", "ZPU", "PJC", "EVM", "PXT", "EMM", "ZPOZ", "RFMQ", "PPF", "GOM", "ERO", "GOP", "RF?", "WGF", "BSP", "SJL"]
+
+        const appData = {
+            // farmFeaturesMapPoints: [],
+            farmFeaturesNames: [
+                {
+                    points: [],
+                    editable: { color: true },
+                    uid: 1,
+                    name: "Agrichemical Storage",
+                    color: "",
+                },
+                { points: [], editable: { color: true }, uid: 2, name: "Animal Health Storage", color: "" },
+                { points: [], editable: { color: true }, uid: 3, name: "Washdown Area", color: "" },
+                { points: [], editable: { color: true }, uid: 4, name: "Fuel Storage", color: "" },
+                { points: [], editable: { color: true }, uid: 5, name: "Fertiliser Bin", color: "" },
+                { points: [], editable: { color: true }, uid: 6, name: "Effluent Pond", color: "" },
+                { points: [], editable: { color: true }, uid: 7, name: "Airstrip", color: "" },
+                { points: [], editable: { color: true }, uid: 8, name: "Woolshed", color: "" },
+                { points: [], editable: { color: true }, uid: 9, name: "Sheep Yards", color: "" },
+                { points: [], editable: { color: true }, uid: 10, name: "Cattle Yards", color: "" },
+                { points: [], editable: { color: true }, uid: 11, name: "Water take ", color: "" },
+                { points: [], editable: { color: true }, uid: 12, name: "Irrigation", color: "" },
+                { points: [], editable: { color: true }, uid: 13, name: "Bridge", color: "" },
+                { points: [], editable: { color: true }, uid: 14, name: "Consented Culvert", color: "" },
+                { points: [], editable: { color: true }, uid: 15, name: "Feed Pad & Feed Lot", color: "" },
+                { points: [], editable: { color: true }, uid: 16, name: "Surface Water Intake", color: "" },
+                { points: [], editable: { color: true }, uid: 17, name: "Bore", color: "" },
+                { points: [], editable: { color: true }, uid: 18, name: "Farm Dump", color: "" },
+                { points: [], editable: { color: true }, uid: 19, name: "Offal Hole", color: "" },
+                { points: [], editable: { color: true }, uid: 20, name: "Old Sheep dip", color: "" },
+                {
+                    points: [],
+                    editable: { color: true },
+                    uid: 21,
+                    name: "Private Drinking Water Outlet",
+                    color: "",
+                },
+            ],
+            activeFeature: null,
+            selectedBasePolygons: []
+        };
+
+        const soilClasses = [
+            { id: 1, name: "steep country", color: "#FF0000" },
+            { id: 2, name: "medium to steep country", color: "#FFA500" },
+            { id: 3, name: "cultivable rolling country", color: "#800080" },
+            { id: 4, name: "River flats", color: "#0000FF" },
+        ];
+
+        // const selectedBasePolygons = createObservableArray(callback);
+        const landUseColors = createObservableArray(() => { });
+
+        const drawPontLayers = [
+            "gl-draw-point-point-stroke-inactive.cold",
+            "gl-draw-point-inactive.cold",
+            "gl-draw-point-stroke-active.cold",
+            "gl-draw-point-active.cold",
+            "gl-draw-point-static.cold",
+            "gl-draw-point-point-stroke-inactive.hot",
+            "gl-draw-point-inactive.hot",
+            "gl-draw-point-stroke-active.hot",
+            "gl-draw-point-active.hot",
+            "gl-draw-point-static.hot",
+        ];
+
+        mapboxgl.accessToken =
+            "pk.eyJ1Ijoib3VyZmFybXMiLCJhIjoiY2x3YWRhbW9nMGRsNjJxcHFwdW81emVhNSJ9.forvlRpP1nOZekrRDqBKjQ";
+        const map = new mapboxgl.Map({
+            container: "map",
+            style: "mapbox://styles/mapbox/satellite-v9",
+            center: { lng: 174.95943864902665, lat: -37.70716520232802 }, //
+            zoom: 9,
+            projection: "mercator",
+        });
+        // Add the control to the map.
+        map.addControl(new mapboxgl.NavigationControl());
+
+        // Add the control to the map.
+        const geocoder = new MapboxGeocoder({
+            accessToken: mapboxgl.accessToken,
+            mapboxgl: mapboxgl,
+            // Limit seach results to Australia.
+            countries: "nz",
+            //placeholder
+            placeholder: "Search address",
+        });
+        document.getElementById("geocoder").appendChild(geocoder.onAdd(map));
+
+        // Draw options
+        var drawOptions = {
+            displayControlsDefault: false,
+            controls: {
+                polygon: true,
+                point: false,
+                trash: true,
+            },
+            userProperties: true,
+        };
+        var Draw = new MapboxDraw(drawOptions);
+        const drawControll = map.addControl(Draw, "top-right");
+
+        // map.on('draw.modechange', function (event) {
+        //     infoDiv.innerText = `Draw mode: ${event.mode}`
+        // });
+
+        const drawControllVisible = (visible) => {
+            const display = visible ? "block" : "none";
+            document.getElementsByClassName(
+                "mapboxgl-ctrl-group"
+            )[1].style.display = display;
+        };
+
+        drawControllVisible(false);
+
+        let popup;
+
+        map.on("draw.selectionchange", function (event) {
+            updatePolygonInfoTab();
+
+            popup && popup.remove();
+            if (currentMode === "simple_select") {
+                //DISABLE DRAW When not in draw mode
+                Draw.changeMode("simple_select");
+                return;
+            }
+
+            infoDiv.classList = "background-blur";
+            infoDiv.innerHTML = "";
+            infoDiv.style.display = "none";
+
+
+            const selectedPolygon = Draw.getSelected().features[0];
+
+            if (!selectedPolygon) return;
+
+            if (selectedPolygon) {
+                const center =
+                    turf.centerOfMass(selectedPolygon).geometry.coordinates;
+                popup = new mapboxgl.Popup({
+                    offset: [0, -15],
+                })
+                    .setLngLat(center)
+                    .addTo(map);
+
+                console.log("Creating element");
+                const dropDown = document.createElement("select");
+                dropDown.classList = "select-drop background-blur";
+                dropDown.innerHTML =
+                    `
+                    <option selected disabled value="">Select option</option>` +
+                    soilClasses
+                        .map((item) => {
+                            return `<option value="${item.id}">${item.name}</option>`;
+                        })
+                        .join("");
+                dropDown.addEventListener("change", (e) => {
+                    const id = e.target.value;
+                    const data = soilClasses.find((item) => item.id === parseInt(id));
+                    if (data) {
+                        const { color, name } = data;
+                        const polyId = Draw.getSelectedIds()[0];
+                        if (!polyId) return;
+                        Draw.setFeatureProperty(polyId, "color", color);
+                        Draw.setFeatureProperty(polyId, "name", name);
+                        // console.log('123', 123);
+                        popup.remove();
+                        Draw.changeMode("simple_select");
+                        Draw.changeMode("direct_select", { featureId: polyId });
+                    }
+                });
+
+                infoDiv.appendChild(dropDown);
+                infoDiv.style.display = "flex";
+
+                const areaText = document.createElement("div");
+                areaText.innerText = polyArea(selectedPolygon);
+                infoDiv.appendChild(areaText);
+
+                const selectCustomColor = document.createElement("div");
+                selectCustomColor.classList = "save-close-button";
+                selectCustomColor.textContent = "Add option";
+
+
+                selectCustomColor.addEventListener("click", () => {
+                    showModal({
+                        title: "Set custom option",
+                        editableOptions: {
+                            name: true,
+                            color: true,
+                        },
+                        okCallback: () => {
+                            //rebuild/update the drop down container with new custom value
+                            dropDown.innerHTML =
+                                `
+                            <option selected disabled value="">Select option</option>` +
+                                soilClasses
+                                    .map((item) => {
+                                        return `<option value="${item.id}">${item.name}</option>`;
+                                    })
+                                    .join("");
+                        },
+                    });
+                });
+
+                infoDiv.appendChild(selectCustomColor);
+            }
+        });
+
+        function polyArea(polygon) {
+            const areaInSquareMeters = turf.area(polygon);
+            const areaInHectares = areaInSquareMeters / 10000;
+            return `Area: ${areaInHectares.toFixed(2)} ha`;
+        }
+
+        map.on("load", () => {
+            //DRAW styles update
+            const filterOption = ["get", "user_color"];
+            map.setPaintProperty(
+                "gl-draw-polygon-fill-inactive.cold",
+                "fill-color",
+                filterOption
+            );
+            map.setPaintProperty(
+                "gl-draw-polygon-fill-active.cold",
+                "fill-color",
+                filterOption
+            );
+            map.setPaintProperty(
+                "gl-draw-polygon-fill-static.cold",
+                "fill-color",
+                filterOption
+            );
+            map.setPaintProperty(
+                "gl-draw-polygon-fill-inactive.hot",
+                "fill-color",
+                filterOption
+            );
+            map.setPaintProperty(
+                "gl-draw-polygon-fill-active.hot",
+                "fill-color",
+                filterOption
+            );
+            map.setPaintProperty(
+                "gl-draw-polygon-fill-static.hot",
+                "fill-color",
+                filterOption
+            );
+
+            map.setPaintProperty(
+                "gl-draw-polygon-fill-inactive.cold",
+                "fill-opacity",
+                0.6
+            );
+            map.setPaintProperty(
+                "gl-draw-polygon-fill-active.cold",
+                "fill-opacity",
+                0.6
+            );
+            map.setPaintProperty(
+                "gl-draw-polygon-fill-static.cold",
+                "fill-opacity",
+                0.6
+            );
+            map.setPaintProperty(
+                "gl-draw-polygon-fill-inactive.hot",
+                "fill-opacity",
+                0.6
+            );
+            map.setPaintProperty(
+                "gl-draw-polygon-fill-active.hot",
+                "fill-opacity",
+                0.6
+            );
+            map.setPaintProperty(
+                "gl-draw-polygon-fill-static.hot",
+                "fill-opacity",
+                0.6
+            );
+
+            map.addSource("aspect", {
+                type: "raster",
+                tiles: [
+                    "https://portals-maps-aws-4.scinfo.org.nz/mapcache/portals/wmts/?layer=aspect_slope&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/jpeg&TileMatrix={z}&TileCol={x}&TileRow={y}",
+                ],
+                tileSize: 256,
+            });
+            map.addLayer({
+                id: "aspect",
+                type: "raster",
+                source: "aspect",
+                paint: {},
+                layout: {
+                    visibility: "none",
+                },
+            });
+
+            map.addSource("soil-type", {
+                type: "raster",
+                tiles: [
+                    "https://portals-maps-aws-3.landcareresearch.co.nz/mapcache/portals/wmts/?layer=smap_polys_anno&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=jpeng&TileMatrix={z}&TileCol={x}&TileRow={y}",
+                ],
+                tileSize: 256,
+            });
+            map.addLayer({
+                id: "soil-type",
+                type: "raster",
+                source: "soil-type",
+                layout: {
+                    visibility: "none",
+                },
+            });
+
+            map.addSource("base", {
+                type: "vector",
+                url: "mapbox://ourfarms.7lvygcwm",
+                //url: "mapbox://ourfarms.b895136s",
+            });
+            map.addLayer({
+                id: "base-data",
+                type: "fill",
+                source: "base",
+                visibility: "visible",
+                "source-layer": "sfiltered",
+                layout: {},
+                paint: {
+                    "fill-color": "gray",
+                    "fill-opacity": 0.5,
+                },
+            });
+            map.addLayer({
+                id: "base-data-outline",
+                type: "line",
+                source: "base",
+                visibility: "visible",
+                "source-layer": "sfiltered",
+                layout: {},
+                paint: {
+                    "line-color": "black",
+                    "line-width": 1,
+                },
+            });
+
+            map.addSource("outlines", {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: [] }
+            });
+            map.addLayer({
+                id: "base-data-outlines",
+                type: "line",
+                source: "outlines",
+                layout: {},
+                paint: {
+                    "line-color": "black",
+                    "line-width": 8,
+                },
+            });
+
+            map.addSource("waterways", {
+                type: "vector",
+                //url: 'mapbox://ourfarms.c10kf05t'
+                url: "mapbox://ourfarms.3cvf1n1m",
+            });
+            map.addLayer({
+                id: "waterways-data",
+                type: "line",
+                source: "waterways",
+                // 'source-layer': 'river-flows-2nhit5',
+                "source-layer": "nzrivernamelinespilot",
+                layout: {
+                    visibility: "none",
+                    "line-join": "round",
+                    "line-cap": "round",
+                },
+                paint: {
+                    "line-color": "blue",
+                    "line-width": 2,
+                },
+            });
+
+            // map.addSource('soil', {
+            //     type: 'vector',
+            //     url: 'mapbox://ourfarms.bkfvmvux'
+            // });
+            // map.addLayer(
+            //     {
+            //         'id': 'soil-data',
+            //         'type': 'fill',
+            //         'source': 'soil',
+            //         'layout': {
+            //             'visibility': "none",
+            //         },
+            //         'source-layer': 'mfe-fundamental-soil-layers-n-9901jl',
+            //         'paint': {
+            //             'fill-color': 'blue',
+            //             'fill-opacity': 0.5
+            //         }
+            //     },
+            // );
+
+            map.addSource("landuse", {
+                type: "vector",
+                url: "mapbox://ourfarms.1tk8wn40",
+            });
+            map.addLayer({
+                id: "landuse-data",
+                type: "line",
+                source: "landuse",
+                "source-layer": "nzlri-land-use-capability-202-0csqzx",
+                layout: {
+                    visibility: "none",
+                },
+                paint: {
+                    "line-color": "white",
+                    "line-width": 1,
+                },
+            });
+            map.addLayer({
+                id: "landuse-data-fill",
+                type: "fill",
+                source: "landuse",
+                "source-layer": "nzlri-land-use-capability-202-0csqzx",
+                layout: {
+                    visibility: "none",
+                },
+                paint: {
+                    "fill-color": "yellow",
+                    "fill-opacity": 0,
+                },
+            });
+
+            map.addSource("lowslope", {
+                type: "vector",
+                url: "mapbox://ourfarms.8o9u13mg",
+            });
+            map.addLayer({
+                id: "lowslope-data",
+                type: "fill",
+                source: "lowslope",
+                "source-layer": "stockexclusionlowslopeland2022",
+                layout: {
+                    visibility: "none",
+                },
+                paint: {
+                    "fill-color": "red",
+                    "fill-opacity": 0.5,
+                },
+            });
+
+            map.addSource("farm-features", {
+                type: "geojson",
+                data: {
+                    type: "FeatureCollection",
+                    features: [],
+                },
+            });
+            map.addLayer({
+                id: "farm-features-circle",
+                type: "circle",
+                source: "farm-features",
+                paint: {
+                    "circle-radius": 6,
+                    "circle-color": ["get", "color"],
+                    "circle-stroke-color": "white",
+                    "circle-stroke-width": 2,
+                },
+            });
+            map.addLayer({
+                id: "farm-features-text",
+                type: "symbol",
+                source: "farm-features",
+                layout: {
+                    "text-field": ["get", "farmName"],
+                    "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+                    "text-size": 13,
+                    "text-variable-anchor": ["left"],
+                    "text-radial-offset": 0.5,
+                    "text-allow-overlap": true,
+                },
+                paint: {
+                    "text-color": "white",
+                    "text-halo-color": "black",
+                    "text-halo-width": 1,
+                },
+            });
+            map.on("click", "farm-features-circle", (e) => {
+                const features = e.features[0];
+                const center = e.features[0].geometry.coordinates.slice();
+                const { categoryUid, pointUid } = features.properties;
+
+                console.log("features", features);
+
+                popup && popup.remove();
+                popup = new mapboxgl.Popup({
+                    offset: [0, -15],
+                })
+                    .setLngLat(center)
+                    .addTo(map);
+
+                const deleteButton = document.createElement("div");
+                deleteButton.className = "delete-button";
+                deleteButton.style.height = "20px";
+                deleteButton.addEventListener("click", () => {
+                    const uid = features.properties.uid;
+                    removePointByUid({
+                        categoryUid,
+                        pointUid,
+                    });
+                    popup.remove();
+                    redrawFarmFeaturesLayer();
+                });
+
+                popup.setDOMContent(deleteButton);
+            });
+
+            map.addSource("stock-arcgis-raster", {
+                type: "raster",
+                tiles: [
+                    "https://maps.waikatoregion.govt.nz/arcgis/rest/services/WRCMAPS/WaterClassification/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&dpi=96&format=png32&transparent=true&layers=show%3A-1%2C-1%2C-1%2C7&f=image",
+                ],
+                tileSize: 256,
+                attribution: "© Waikato Regional Council",
+            });
+            map.addLayer({
+                id: "stock-raster-layer",
+                type: "raster",
+                source: "stock-arcgis-raster",
+                layout: {
+                    visibility: "none",
+                },
+            });
+            map.addLayer({
+                id: "stock-raster-layer1",
+                type: "raster",
+                source: "stock-arcgis-raster",
+                layout: {
+                    visibility: "none",
+                },
+            });
+
+            map.on("click", "landuse-data-fill", (e) => {
+                const drawMode = Draw.getMode();
+                console.log("drawMode", drawMode);
+
+                if (landUseClickLock) {
+                    return;
+                }
+
+                if (drawMode === "draw_polygon" || drawMode === "direct_select") {
+                    return;
+                }
+
+                console.log("currentMode", currentMode);
+                // if (Draw.getMode() !== "simple_select") return;
+                if (currentMode !== "simple_select") return;
+
+                const features = map.queryRenderedFeatures(e.point, {
+                    layers: ["landuse-data-fill"],
+                });
+                if (!features.length) {
+                    return;
+                }
+
+                const feature = features[0];
+
+                console.log("feature", feature);
+
+                const polygonId = feature.properties.polyid;
+                const info = feature.properties.nzcu_descr;
+
+                updateLandUseColorsLayer(polygonId);
+
+                const contentDiv = document.createElement("div");
+                contentDiv.appendChild(document.createTextNode(info));
+                // contentDiv.appendChild(dropDown)
+
+                const popup = new mapboxgl.Popup({
+                    offset: [0, -15],
+                })
+                    .setLngLat(e.lngLat)
+                    .setDOMContent(contentDiv)
+                    .addTo(map);
+
+                popup.once("close", function () {
+                    updateLandUseColorsLayer();
+                });
+            });
+
+            map.on("click", "base-data", (e) => {
+                if (lockPropertyFromClick) return;
+
+                const features = map.queryRenderedFeatures(e.point, {
+                    layers: ["base-data"],
+                });
+                if (!features.length) {
+                    return;
+                }
+
+                console.log("features", features);
+
+                const feature = features[0];
+                const geometry = feature.geometry;
+
+                console.log("feature", feature);
+                const polygonId = feature.properties.id;
+
+                if (appData.selectedBasePolygons.map(p => p.polygonId).includes(polygonId)) {
+                    appData.selectedBasePolygons.splice(
+                        appData.selectedBasePolygons.findIndex(p => p.polygonId === polygonId),
+                        1
+                    );
+                } else {
+                    appData.selectedBasePolygons.push({
+                        polygonId,
+                        geometry
+                    });
+                }
+
+                map.setPaintProperty("base-data", "fill-opacity", [
+                    "case",
+                    ["in", ["get", "id"], ["literal", appData.selectedBasePolygons.map(p => p.polygonId)]],
+                    0,
+                    0.5,
+                ]);
+
+
+                updateSelectedPolygonsBorder()
+
+            });
+            loadPropertyControls();
+
+            function updateSelectedPolygonsBorder() {
+
+
+                if (appData.selectedBasePolygons.length <= 1) return;
+                console.log('!!!!!!!!!!!!',);
+                //create a buffer 
+                const buffer = appData.selectedBasePolygons.map(polygon => {
+                    return turf.buffer(polygon.geometry, 30, { units: "meters" });
+                })
+
+                console.log('buffer', buffer);
+
+                //join intersected polygons
+                const union = turf.union(turf.featureCollection([...buffer]));
+
+                console.log('union', JSON.stringify(union));
+
+                map.getSource("outlines").setData(union);
+
+            }
+
+            drawPontLayers.forEach((layer) => {
+                map.setLayoutProperty(layer, "visibility", "none");
+            });
+
+            map.on("click", (e) => {
+                console.log("e", e);
+
+                if (appData.activeFeature) {
+                    const { item, div } = appData.activeFeature;
+                    const { lat, lng } = e.lngLat;
+                    const featureItem = appData.farmFeaturesNames.find(
+                        (feature) => feature.name === item.name
+                    );
+                    if (featureItem) {
+                        featureItem.points.push({
+                            uid: generateUID(),
+                            lat,
+                            lng,
+                        });
+                    }
+                    redrawFarmFeaturesLayer();
+                    map.getCanvas().style.cursor = "";
+
+                    appData.activeFeature = null;
+                    div.classList.remove("selected-farm-feature");
+                }
+            });
+        });
+
+        const property = buildSwitcher(
+            "Property",
+            (checked) => {
+                const display = checked ? "visible" : "none";
+                map.setLayoutProperty("base-data", "visibility", display);
+            },
+            false,
+            true
+        );
+
+        const lockProperty = buildSwitcher(
+            "Lock",
+            (checked) => {
+                lockPropertyFromClick = checked;
+            },
+            false,
+            true
+        );
+
+        switchersEnableDiv.appendChild(property.div);
+
+        const aspect = buildSwitcher(
+            "Aspect",
+            (checked) => {
+                const display = checked ? "visible" : "none";
+                map.setLayoutProperty("aspect", "visibility", display);
+            },
+            false,
+            false
+        );
+        switchersEnableDiv.appendChild(aspect.div);
+
+        const soilType = buildSwitcher(
+            "Soil type",
+            (checked) => {
+                const display = checked ? "visible" : "none";
+                map.setLayoutProperty("soil-type", "visibility", display);
+            },
+            false,
+            false
+        );
+        switchersEnableDiv.appendChild(soilType.div);
+
+        const landUse = buildSwitcher(
+            "Land Use Capability",
+            (checked) => {
+                const display = checked ? "visible" : "none";
+                map.setLayoutProperty("landuse-data", "visibility", display);
+                map.setLayoutProperty("landuse-data-fill", "visibility", display);
+            },
+            false,
+            false
+        );
+
+        const landUseLock = buildSwitcher(
+            "Lock",
+            (checked) => {
+                landUseClickLock = checked;
+            },
+            false,
+            true
+        );
+
+        switchersEnableDiv.appendChild(landUse.div);
+
+        const waterways = buildSwitcher(
+            "Waterways",
+            (checked) => {
+                const display = checked ? "visible" : "none";
+                map.setLayoutProperty("waterways-data", "visibility", display);
+            },
+            false,
+            false
+        );
+        switchersEnableDiv.appendChild(waterways.div);
+
+        const lowSlope = buildSwitcher(
+            "Low Slope",
+            (checked) => {
+                const display = checked ? "visible" : "none";
+                map.setLayoutProperty("lowslope-data", "visibility", display);
+            },
+            false,
+            false
+        );
+        switchersEnableDiv.appendChild(lowSlope.div);
+
+        const farmFeatures = buildSwitcher(
+            "Farm Features",
+            (checked) => {
+                const display = checked ? "visible" : "none";
+                // drawPontLayers.forEach((layer) => {
+                //     map.setLayoutProperty(layer, "visibility", display);
+                // });
+                map.setLayoutProperty("farm-features-circle", "visibility", display);
+                map.setLayoutProperty("farm-features-text", "visibility", display);
+            },
+            false,
+            false
+        );
+        switchersEnableDiv.appendChild(farmFeatures.div);
+
+        const stockExclusion = buildSwitcher(
+            "Stock Exclusion",
+            (checked) => {
+                const display = checked ? "visible" : "none";
+                map.setLayoutProperty("stock-raster-layer", "visibility", display);
+                map.setLayoutProperty("stock-raster-layer1", "visibility", display); // to increase brightness
+            },
+            false,
+            false
+        );
+        switchersEnableDiv.appendChild(stockExclusion.div);
+
+
+        const landUnits = buildSwitcher(
+            "Land Units",
+            (checked) => {
+                console.log('LOAD',);
+
+                if (checked) {
+                    propertyListDiv.style.display = "flex";
+
+                    const appPolygonsData = localStorage.getItem("appPolygonsData");
+                    const json = JSON.parse(appPolygonsData)
+                    if (json && json.features.length > 0) {
+                        const polygonsArray = json
+                        console.log("polygonsArray", polygonsArray);
+                        Draw.add(polygonsArray);
+                        updatePolygonInfoTab();
+                    } else {
+                        console.warn("No polygons found in local storage")
+                    }
+                } else {
+                    Draw.deleteAll();
+                    updatePolygonInfoTab();
+
+                    propertyListDiv.style.display = "none";
+                }
+
+            },
+            false,
+            false
+        );
+        switchersEnableDiv.appendChild(landUnits.div);
+
+        // const soil = buildSwitcher("Soil", checked => {
+        //     const display = checked ? "visible" : "none"
+        //     map.setLayoutProperty('soil-data', 'visibility', display);
+        // }, false, false)
+        // switchersEnableDiv.appendChild(soil.div)
+
+        actionsListDiv.appendChild(
+            buildActionButton({
+                name: "Select your property",
+                callback: () => {
+                    Draw.changeMode(Draw.modes.SIMPLE_SELECT);
+                    lockProperty.turnOff();
+                    property.turnOn();
+                    //landUse.turnOff()
+                    currentMode = "simple_select";
+                    drawControllVisible(false);
+                    landUseClickLock = true;
+
+                    changeCursor("pointer");
+
+                    saveAndLoadDiv.style.display = "flex";
+                    editMode(true);
+                },
+            })
+        );
+        actionsListDiv.appendChild(
+            buildActionButton({
+                name: "Map your Land Units",
+                callback: () => {
+                    lockProperty.turnOn();
+                    property.turnOn();
+                    drawControllVisible(true);
+
+                    changeCursor("");
+                    Draw.changeMode("draw_polygon");
+                    currentMode = "draw_polygon";
+
+                    saveAndLoadDiv.style.display = "flex";
+
+                    editMode(true);
+
+                    landUnits.turnOn();//!!
+
+                    const appPolygonsData = localStorage.getItem("appPolygonsData");
+                    const json = JSON.parse(appPolygonsData)
+                    if (json && json.features.length > 0) {
+                        const polygonsArray = json
+                        console.log("polygonsArray", polygonsArray);
+                        Draw.add(polygonsArray);
+                        updatePolygonInfoTab();
+                    } else {
+                        console.warn("No polygons found in local storage")
+                    }
+                },
+            })
+        );
+        actionsListDiv.appendChild(
+            buildActionButton({
+                name: "View LU/Soils info",
+                callback: () => {
+                    // property.turnOff()
+                    landUse.turnOn();
+                    lockProperty.turnOn();
+                    currentMode = "simple_select";
+                    Draw.changeMode("simple_select");
+                    drawControllVisible(false);
+                    landUseClickLock = false;
+
+                    changeCursor("pointer");
+
+                    closeControl.style.display = "flex";
+                    editMode(true);
+                },
+            })
+        );
+
+        actionsListDiv.appendChild(
+            buildActionButton({
+                name: "Map Farm Features",
+                callback: () => {
+                    //Draw.changeMode(Draw.modes.DRAW_POINT)
+                    farmFeatures.turnOn();
+                    farmFeaturesListDiv.style.display = "flex";
+                    saveAndLoadDiv.style.display = "flex";
+
+                    lockProperty.turnOn();
+                    landUseClickLock = true;
+                    editMode(true);
+
+                    actionsPannel.style.display = "none";
+                },
+            })
+        );
+
+        function editMode(enabled) {
+            if (enabled) {
+                editPanel.style.filter = "blur(5px)";
+                editPanel.style.pointerEvents = "none";
+            } else {
+                editPanel.style.filter = "none";
+                editPanel.style.pointerEvents = "auto";
+            }
+        }
+
+        function changeCursor(cursorType) {
+            map.getCanvas().style.cursor = cursorType;
+        }
+
+        function buildLoadPolygonsButton() {
+            const loadButton = document.createElement("div");
+            loadButton.className = "save-close-button";
+            loadButton.innerText = "Load";
+            loadButton.addEventListener("click", () => {
+                const appPolygonsData = localStorage.getItem("appPolygonsData");
+                const json = JSON.parse(appPolygonsData)
+
+                if (json && json.features.length > 0) {
+                    const polygonsArray = json
+                    console.log("polygonsArray", polygonsArray);
+                    Draw.add(polygonsArray);
+                    updatePolygonInfoTab();
+                } else {
+                    console.warn("No polygons found in local storage")
+                }
+            });
+            // loadPolygons.appendChild(loadButton);
+            return loadButton;
+        }
+
+        function updatePolygonInfoTab() {
+            propertyListDiv.innerHTML = "";
+            propertyListDiv.className = "background-blur"
+
+            const polygons = Draw.getAll().features;
+            polygons.forEach((poly) => {
+                const area = turf.area(poly);
+                if (area <= 0) return; //skip empty polygons
+
+                const div = document.createElement("div");
+                div.className = "divider-element";
+                div.style.display = "flex";
+                div.style.alignItems = "flex-start";
+                div.style.gap = "5px";
+                div.style.flexDirection = "column";
+                // div.style.justifyContent = "space-between";
+
+                const color = document.createElement("div");
+                color.style.backgroundColor = poly.properties.color;
+                color.style.width = "20px";
+                color.style.height = "20px";
+                color.style.borderRadius = "20px";
+
+                const text = document.createElement("span");
+                text.innerText = poly.properties.name;
+
+                const areaDiv = document.createElement("span");
+                areaDiv.innerText = polyArea(poly);
+
+                const deleteButton = document.createElement("div");
+                deleteButton.style.cursor = "pointer";
+                const deleteIcon = document.createElement("img");
+                deleteIcon.src = "icons/rubbish-bin-svgrepo-com.svg";
+                deleteIcon.style.width = "20px";
+                deleteIcon.style.height = "20px";
+                deleteIcon.style.filter = "invert(1)";
+                deleteButton.addEventListener("click", () => {
+                    Draw.delete(poly.id);
+                    updatePolygonInfoTab();
+                    saveAndLoadDiv.style.display = "flex";
+                });
+                deleteButton.appendChild(deleteIcon);
+
+                const editButton = document.createElement("div");
+                editButton.style.cursor = "pointer";
+                const editIcon = document.createElement("img");
+                editIcon.src = "icons/edit-3-svgrepo-com.svg";
+                editIcon.style.width = "20px";
+                editIcon.style.height = "20px";
+                editIcon.style.filter = "invert(1)";
+
+                editIcon.addEventListener("click", () => {
+                    Draw.changeMode("direct_select", { featureId: poly.id });
+                    currentMode = "direct_select";
+                    drawControllVisible(true);
+                    landUseClickLock = true;
+
+                    saveAndLoadDiv.style.display = "flex";
+
+                    editMode(true);
+                    infoDiv.style.display = "flex";
+                });
+                editButton.appendChild(editIcon);
+
+                const left = document.createElement("div");
+                left.className = "flex-nowrap";
+                left.appendChild(color);
+                left.appendChild(text);
+
+                const right = document.createElement("div");
+                right.style.display = "flex";
+                right.style.flexDirection = "row";
+                right.style.gap = "10px";
+
+                right.appendChild(areaDiv);
+                right.appendChild(editButton);
+                right.appendChild(deleteButton);
+
+                div.appendChild(left);
+                div.appendChild(right);
+
+                propertyListDiv.appendChild(div);
+            });
+        }
+
+        function updateLandUseColorsLayer(selectedId) {
+            map.setPaintProperty("landuse-data-fill", "fill-opacity", 0);
+
+            const colors = landUseColors.map((item) => {
+                return [item.id, item.color];
+            });
+
+            const opacity = landUseColors.map((item) => {
+                return [item.id, 0.5];
+            });
+
+            //hightligh selected polygon
+            if (
+                selectedId &&
+                !landUseColors.find((item) => item.id === selectedId)
+            ) {
+                opacity.push([selectedId, 0.5]);
+            }
+
+            if (colors.length > 0) {
+                map.setPaintProperty("landuse-data-fill", "fill-color", [
+                    "match",
+                    ["get", "polyid"],
+                    ...colors.flat(),
+                    "yellow",
+                ]);
+            }
+
+            if (opacity.length > 0) {
+                map.setPaintProperty("landuse-data-fill", "fill-opacity", [
+                    "match",
+                    ["get", "polyid"],
+                    ...opacity.flat(),
+                    0,
+                ]);
+            }
+        }
+
+        function createSaveButton() {
+            const saveButton = document.createElement("div");
+            saveButton.innerText = "Save & Close";
+            saveButton.className = "save-close-button";
+            saveButton.addEventListener("click", () => {
+                if (appData.selectedBasePolygons) {
+                    localStorage.setItem(
+                        "appPolygonsData",
+                        JSON.stringify(Draw.getAll())
+                    );
+                }
+                Draw.changeMode(Draw.modes.SIMPLE_SELECT);
+                currentMode = "simple_select";
+                lockProperty.turnOn();
+                drawControllVisible(false);
+                landUseClickLock = true;
+                farmFeaturesListDiv.style.display = "none";
+                saveAndLoadDiv.style.display = "none";
+                editMode(false);
+
+                actionsPannel.style.display = "flex";
+                infoDiv.style.display = "none";
+            });
+            return saveButton;
+        }
+
+        function loadPropertyControls() {
+
+            const saveButton = createSaveButton();
+            propertyControlsDiv.appendChild(saveButton);
+
+            const closeButton = document.createElement("div");
+            closeButton.innerText = "Close";
+            closeButton.className = "save-close-button";
+            closeButton.addEventListener("click", () => {
+                Draw.changeMode(Draw.modes.SIMPLE_SELECT);
+                currentMode = "simple_select";
+                lockProperty.turnOn();
+                drawControllVisible(false);
+                landUseClickLock = true;
+
+                farmFeaturesListDiv.style.display = "none";
+                saveAndLoadDiv.style.display = "none";
+                closeControl.style.display = "none";
+
+                editMode(false);
+            });
+            closeControl.appendChild(closeButton);
+        }
+
+        function buildActionButton({ name, callback }) {
+            const div = document.createElement("div");
+            div.className = "action-button";
+            div.style.display = "flex";
+            div.style.alignItems = "center";
+            div.style.justifyContent = "center";
+            div.style.cursor = "pointer";
+            div.style.gap = "5px";
+            div.style.userSelect = "none";
+
+            div.addEventListener("click", () => {
+                if (typeof callback === "function") callback();
+            });
+
+            const text = document.createElement("span");
+            text.innerText = name;
+            div.appendChild(text);
+
+            return div;
+        }
+
+        function buildSwitcher(labelText, action, colorCircle, checked = true) {
+            const div = document.createElement("div");
+            div.className = "switcher-div divider-element";
+            div.style.cursor = "pointer";
+
+            const label = document.createElement("label");
+            label.className = "switch";
+
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.checked = checked;
+
+            div.addEventListener("click", () => {
+                checkbox.checked = !checkbox.checked;
+                if (typeof action === "function") {
+                    action(checkbox.checked);
+                }
+            });
+
+            function turnOn() {
+                checkbox.checked = true;
+                if (typeof action === "function") {
+                    action(checkbox.checked);
+                }
+            }
+
+            function turnOff() {
+                checkbox.checked = false;
+                if (typeof action === "function") {
+                    action(checkbox.checked);
+                }
+            }
+
+            const color = document.createElement("div");
+            color.style.width = "10px";
+            color.style.height = "10px";
+            color.style.backgroundColor = colorCircle;
+            color.style.borderRadius = "10px";
+            color.style.border = "1px solid #2196f3";
+
+            const span = document.createElement("span");
+            span.className = "slider round";
+
+            const text = document.createElement("div");
+            text.innerText = labelText;
+
+            label.appendChild(checkbox);
+            label.appendChild(span);
+
+            div.appendChild(label);
+            if (colorCircle) div.appendChild(color);
+            div.appendChild(text);
+
+            return { div, turnOn, turnOff };
+        }
+
+        const div = document.createElement("div");
+        div.className = "action-button width-fit";
+        div.style.justifyContent = "center";
+        div.innerText = "+ Create New Feature";
+        div.addEventListener("click", () => {
+            showModal({
+                title: "Set custom option",
+                editableOptions: {
+                    name: true,
+                    color: true,
+                },
+                okCallback: (props) => {
+                    console.log("props", props);
+                    //add to the top of the list
+                    appData.farmFeaturesNames.unshift({
+                        uid: generateUID(),
+                        name: `${props.name}`,
+                        color: props.color,
+                        points: [],
+                        editable: {
+                            name: true,
+                            color: true,
+                            delete: true,
+                        },
+                    });
+                    createFarmFeaturesList();
+                },
+            });
+        });
+        farmFeaturesListMenuDiv.appendChild(div);
+
+
+        const saveContainer = document.createElement("div");
+        saveContainer.style.display = "flex";
+        saveContainer.style.justifyContent = "center";
+        const saveButton = createSaveButton();
+        saveContainer.appendChild(saveButton);
+        farmFeaturesListButtonsDiv.appendChild(saveContainer);
+
+        createFarmFeaturesList();
+
+        function createFarmFeaturesList() {
+            farmFeaturesListItemsDiv.innerHTML = "";
+
+            let lastSelectedItem = null; // Track the last selected item
+
+            appData.farmFeaturesNames.forEach((item) => {
+                farmFeaturesListItemsDiv.appendChild(createItem(item));
+            });
+
+
+
+            function createItem(item) {
+                const container = document.createElement("div");
+                container.style.display = "flex";
+                container.className = "divider-element";
+
+                const div = document.createElement("div");
+                div.className = "selected-farm-item ";
+                const text = document.createElement("span");
+                text.innerText = " + " + item.name;
+                div.appendChild(text);
+
+                div.addEventListener("click", () => {
+                    console.log("DRAW POINT", item);
+                    map.getCanvas().style.cursor = "crosshair";
+                    container.classList.add("selected-farm-feature"); // Add the class to the current item
+
+                    appData.activeFeature = {
+                        item,
+                        div,
+                    };
+
+                    if (lastSelectedItem && lastSelectedItem !== container) {
+                        //compare reference to the last selected item
+                        lastSelectedItem.classList.remove("selected-farm-feature"); // Remove the class from the last selected item
+                    }
+                    lastSelectedItem = container; // Update the last selected item
+                });
+
+                const editButton = document.createElement("div");
+                editButton.style.cursor = "pointer";
+                editButton.className = "edit-container";
+                editButton.addEventListener("click", () => {
+                    showModal({
+                        title: "Set custom option",
+                        editableOptions: item.editable,
+                        data: {
+                            name: item.name,
+                            color: item.color,
+                        },
+                        okCallback: (props) => {
+                            console.log("props!!!!!!!!!", props);
+                            // item.name = props.name
+                            // item.color = props.color
+                            //update features
+
+                            appData.farmFeaturesNames.forEach((feature) => {
+                                //update feature name
+
+                                console.log("feature.name", feature.name);
+                                console.log("item.name", item.name);
+                                console.log("props.name", props.name);
+
+                                if (feature.name === item.name) {
+                                    feature.name = props.name;
+                                    feature.color = props.color;
+                                }
+                            });
+                            redrawFarmFeaturesLayer();
+                            createFarmFeaturesList();
+                        },
+                        onDeleteCallback: () => {
+                            console.log("onDeleteCallback");
+                            //remove from array by name with splice method
+                            const index = appData.farmFeaturesNames.findIndex(
+                                (i) => i.name === item.name
+                            );
+                            appData.farmFeaturesNames.splice(index, 1);
+
+                            redrawFarmFeaturesLayer();
+                            createFarmFeaturesList();
+                        },
+                    });
+                });
+
+                container.appendChild(div);
+
+                if (item.editable) {
+                    container.appendChild(editButton);
+                }
+
+                return container;
+            }
+        }
+
+        function findPointByUid({ categoryUid, pointUid }) {
+            const category = appData.farmFeaturesNames.find(
+                (item) => item.uid === categoryUid
+            );
+            if (category) {
+                return category.points.find((point) => point.uid === pointUid);
+            }
+            return null;
+        }
+
+        function removePointByUid({ categoryUid, pointUid }) {
+            const category = appData.farmFeaturesNames.find(
+                (item) => item.uid === categoryUid
+            );
+            if (category) {
+                const index = category.points.findIndex(
+                    (point) => point.uid === pointUid
+                );
+                category.points.splice(index, 1);
+            }
+        }
+
+        function redrawFarmFeaturesLayer() {
+            // const features = appData.farmFeaturesMapPoints.map(item => {
+            const features = appData.farmFeaturesNames
+                .filter((item) => item.points.length > 0)
+                .map((item) => {
+                    const points = item.points.map((point) => {
+                        return {
+                            type: "Feature",
+                            properties: {
+                                categoryUid: item.uid,
+                                pointUid: point.uid,
+                                color: item.color,
+                                farmName: item.name,
+                            },
+                            geometry: {
+                                type: "Point",
+                                coordinates: [point.lng, point.lat],
+                            },
+                        };
+                    });
+                    return points;
+                })
+                .flat();
+
+            console.log("features", features);
+
+            map.getSource("farm-features").setData({
+                type: "FeatureCollection",
+                features: features,
+            });
+        }
+
+        function createObservableArray(callback) {
+            // Handler for the Proxy
+            const handler = {
+                // Intercepting the 'set' operation
+                set(target, property, value, receiver) {
+                    let result = Reflect.set(target, property, value, receiver);
+                    // Trigger the callback
+                    if (property === "length" || !isNaN(property)) {
+                        callback(target);
+                    }
+                    return result;
+                },
+                // Intercepting the 'deleteProperty' operation
+                deleteProperty(target, property) {
+                    let result = Reflect.deleteProperty(target, property);
+                    // Trigger the callback
+                    callback(target);
+                    return result;
+                },
+            };
+            // Creating a Proxy around an empty array
+            return new Proxy([], handler);
+        }
+
+        function callback(target, property, value) {
+            console.log(
+                `Array updated: target = ${target}, property = ${property}, value = ${value}`
+            );
+            // propertyListDiv.innerHTML = target.map(p => {
+            //     return `${p}`
+            // }).join("</br>");
+        }
+
+        function showModal({
+            title,
+            data,
+            editableOptions = null,
+            okCallback,
+            cancelCallback,
+            onDeleteCallback,
+        }) {
+            console.log("editableOptions", editableOptions);
+            const modalContainer = document.getElementById("modal-container");
+
+            const modal = document.createElement("div");
+            modal.className = "modal";
+
+            const modalHeader = document.createElement("div");
+            modalHeader.className = "modal-header";
+
+            const modalTitle = document.createElement("h2");
+            modalTitle.className = "modal-title";
+            modalTitle.innerText = title;
+
+            const container = document.createElement("div");
+            container.style = `display: flex;
+                                flex-direction: row-reverse;
+                                justify-content: space-between;
+                            `;
+            const inputName = document.createElement("input");
+            inputName.style.padding = "5px";
+            inputName.type = "text";
+            inputName.id = "customName";
+            inputName.placeholder = "Set name";
+            inputName.value = data?.name || "";
+
+            const colorInput = document.createElement("input");
+            colorInput.type = "color";
+            colorInput.id = "head";
+            colorInput.name = "head";
+            colorInput.value = data?.color || "#000000";
+
+            editableOptions.color && container.appendChild(colorInput);
+
+            editableOptions.name && container.appendChild(inputName);
+
+            const modalContent = document.createElement("div");
+            modalContent.className = "modal-content";
+            modalContent.appendChild(container);
+
+            modalHeader.appendChild(modalTitle);
+            modal.appendChild(modalHeader);
+            modal.appendChild(modalContent);
+            modalContainer.appendChild(modal);
+
+            const modalButtons = document.createElement("div");
+            modalButtons.className = "modal-buttons";
+
+            const okButton = document.createElement("div");
+            okButton.className = "save-close-button";
+            okButton.innerText = "OK";
+            okButton.onclick = () => {
+                soilClasses.push({
+                    id: soilClasses.length + 1,
+                    name: inputName.value,
+                    color: colorInput.value,
+                });
+
+                if (typeof okCallback === "function") {
+                    okCallback({ name: inputName.value, color: colorInput.value });
+                }
+                modalContainer.style.display = "none";
+                modalContainer.innerHTML = ""; // Clear the modal content
+            };
+
+            const cancelButton = document.createElement("div");
+            cancelButton.className = "save-close-button";
+            cancelButton.innerText = "Cancel";
+            cancelButton.onclick = () => {
+                if (typeof cancelCallback === "function") {
+                    cancelCallback();
+                }
+                modalContainer.style.display = "none";
+                modalContainer.innerHTML = ""; // Clear the modal content
+            };
+
+            if (onDeleteCallback) {
+                const deleteButton = document.createElement("div");
+                deleteButton.className = "delete-button";
+                deleteButton.onclick = () => {
+                    onDeleteCallback();
+
+                    modalContainer.style.display = "none";
+                    modalContainer.innerHTML = ""; // Clear the modal content
+                };
+                editableOptions.delete && modalButtons.appendChild(deleteButton);
+            }
+
+            modalButtons.appendChild(okButton);
+            modalButtons.appendChild(cancelButton);
+            modal.appendChild(modalButtons);
+
+            modalContainer.style.display = "flex";
+        }
+
+        function generateUID() {
+            return (
+                "_" +
+                Date.now().toString(36) +
+                Math.random().toString(36).substr(2, 5)
+            );
+        }
+    </script>
+</body>
+
+</html>
