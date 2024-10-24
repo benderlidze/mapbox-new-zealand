@@ -576,6 +576,25 @@
             content: '\FF0D';
             font-size: 20px;
         }
+
+        .color-palette {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .color-palette-row {
+            display: flex;
+            flex-direction: row;
+            gap: 5px;
+        }
+
+        .color-palette-item {
+            width: 20px;
+            height: 20px;
+            border-radius: 100%;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -846,14 +865,39 @@
                 dropDown.classList = "select-drop background-blur";
                 dropDown.innerHTML =
                     `
-                    <option selected disabled value="">Select option</option>` +
+                    <option selected disabled value="">Select option</option>
+                    <option value="add_new">(+) Add new option</option>` +
                     soilClasses
                         .map((item) => {
                             return `<option value="${item.id}">${item.name}</option>`;
                         })
                         .join("");
                 dropDown.addEventListener("change", (e) => {
+
                     const id = e.target.value;
+
+                    if (id === "add_new") {
+                        showModal({
+                            title: "Set custom option",
+                            editableOptions: {
+                                name: true,
+                                color: true,
+                            },
+                            okCallback: () => {
+                                //rebuild/update the drop down container with new custom value
+                                dropDown.innerHTML =
+                                    `
+                            <option selected disabled value="">Select option</option>` +
+                                    soilClasses
+                                        .map((item) => {
+                                            return `<option value="${item.id}">${item.name}</option>`;
+                                        })
+                                        .join("");
+                            },
+                        });
+                        return;
+                    }
+
                     const data = soilClasses.find((item) => item.id === parseInt(id));
                     if (data) {
                         const { color, name } = data;
@@ -875,45 +919,43 @@
                 areaText.innerText = polyArea(selectedPolygon);
                 infoDiv.appendChild(areaText);
 
-                const selectCustomColor = document.createElement("div");
-                selectCustomColor.classList = "save-close-button";
-                selectCustomColor.textContent = "Add option";
-
-
-                selectCustomColor.addEventListener("click", () => {
-                    showModal({
-                        title: "Set custom option",
-                        editableOptions: {
-                            name: true,
-                            color: true,
-                        },
-                        okCallback: () => {
-                            //rebuild/update the drop down container with new custom value
-                            dropDown.innerHTML =
-                                `
-                            <option selected disabled value="">Select option</option>` +
-                                soilClasses
-                                    .map((item) => {
-                                        return `<option value="${item.id}">${item.name}</option>`;
-                                    })
-                                    .join("");
-                        },
-                    });
-                });
-
-
+                // const selectCustomColor = document.createElement("div");
+                // selectCustomColor.classList = "save-close-button";
+                // selectCustomColor.textContent = "Add option";
+                // selectCustomColor.addEventListener("click", () => {
+                //     showModal({
+                //         title: "Set custom option",
+                //         editableOptions: {
+                //             name: true,
+                //             color: true,
+                //         },
+                //         okCallback: () => {
+                //             //rebuild/update the drop down container with new custom value
+                //             dropDown.innerHTML =
+                //                 `
+                //             <option selected disabled value="">Select option</option>` +
+                //                 soilClasses
+                //                     .map((item) => {
+                //                         return `<option value="${item.id}">${item.name}</option>`;
+                //                     })
+                //                     .join("");
+                //         },
+                //     });
+                // });
 
                 const saveData = document.createElement("div");
                 saveData.classList = "save-close-button";
                 saveData.textContent = "Save";
                 saveData.addEventListener("click", () => {
-                    console.log('Save',);
+                    console.log('Save savePolygonData',);
+                    savePolygonData({ save: true })
                 });
                 const cancelData = document.createElement("div");
-                cancelData.classList = "save-close-button";
-                cancelData.textContent = "Cancel";
+                cancelData.classList = "save-close-button gray-button";
+                cancelData.textContent = "Close";
                 cancelData.addEventListener("click", () => {
                     console.log('Cancel',);
+                    savePolygonData({ save: false });
                 });
                 const saveCancelDivContainer = document.createElement("div");
                 saveCancelDivContainer.classList = "flex-center flex-gap-10";
@@ -922,7 +964,7 @@
 
 
                 infoDiv.appendChild(saveCancelDivContainer);
-                infoDiv.appendChild(selectCustomColor);
+                //infoDiv.appendChild(selectCustomColor);
             }
         });
 
@@ -1363,6 +1405,23 @@
 
             map.on("click", (e) => {
                 console.log("e", e);
+                console.log("e", e.feature);
+
+                const features = map.queryRenderedFeatures(e.point, {
+                    layers: ["gl-draw-polygon-fill-inactive.cold"],
+                });
+                if (features[0]) {
+                    const poly = features[0];
+                    Draw.changeMode("direct_select", { featureId: poly.properties.id });
+                    currentMode = "direct_select";
+                    drawControllVisible(true);
+                    landUseClickLock = true;
+                    editMode(true);
+                    infoDiv.style.display = "flex";
+                    return;
+                }
+
+
 
                 if (appData.activeFeature) {
                     const { item, div } = appData.activeFeature;
@@ -1707,7 +1766,8 @@
                 deleteButton.addEventListener("click", () => {
                     Draw.delete(poly.id);
                     updatePolygonInfoTab();
-                    saveAndLoadDiv.style.display = "flex";
+                    //saveAndLoadDiv.style.display = "flex";
+                    savePolygonData({ save: true })
                 });
                 deleteButton.appendChild(deleteIcon);
 
@@ -1725,7 +1785,7 @@
                     drawControllVisible(true);
                     landUseClickLock = true;
 
-                    saveAndLoadDiv.style.display = "flex";
+                    //saveAndLoadDiv.style.display = "flex";
 
                     editMode(true);
                     infoDiv.style.display = "flex";
@@ -1791,28 +1851,44 @@
             }
         }
 
+
+        function savePolygonData({ save = true }) {
+            if (selectedBasePolygons && save) {
+
+                const polygons = Draw.getAll().features.filter((poly) => {
+                    //check coordinates 
+                    return poly.geometry.coordinates[0].length > 3
+                })
+
+                localStorage.setItem(
+                    "appPolygonsData",
+                    JSON.stringify({
+                        type: "FeatureCollection",
+                        features: polygons,
+                    })
+                );
+            }
+
+            Draw.changeMode(Draw.modes.SIMPLE_SELECT);
+            currentMode = "simple_select";
+            lockProperty.turnOn();
+            drawControllVisible(false);
+            landUseClickLock = true;
+            farmFeaturesListDiv.style.display = "none";
+            saveAndLoadDiv.style.display = "none";
+            editMode(false);
+
+            actionsPannel.style.display = "flex";
+            infoDiv.style.display = "none";
+        }
+
+
         function createSaveButton() {
             const saveButton = document.createElement("div");
             saveButton.innerText = "Save & Close";
             saveButton.className = "save-close-button";
             saveButton.addEventListener("click", () => {
-                if (selectedBasePolygons) {
-                    localStorage.setItem(
-                        "appPolygonsData",
-                        JSON.stringify(Draw.getAll())
-                    );
-                }
-                Draw.changeMode(Draw.modes.SIMPLE_SELECT);
-                currentMode = "simple_select";
-                lockProperty.turnOn();
-                drawControllVisible(false);
-                landUseClickLock = true;
-                farmFeaturesListDiv.style.display = "none";
-                saveAndLoadDiv.style.display = "none";
-                editMode(false);
-
-                actionsPannel.style.display = "flex";
-                infoDiv.style.display = "none";
+                savePolygonData({ save: true })
             });
             return saveButton;
         }
@@ -2166,6 +2242,7 @@
             container.style = `display: flex;
                                 flex-direction: row-reverse;
                                 justify-content: space-between;
+                                gap:10px;
                             `;
             const inputName = document.createElement("input");
             inputName.style.padding = "5px";
@@ -2174,15 +2251,21 @@
             inputName.placeholder = "Set name";
             inputName.value = data?.name || "";
 
-            const colorInput = document.createElement("input");
-            colorInput.type = "color";
-            colorInput.id = "head";
-            colorInput.name = "head";
-            colorInput.value = data?.color || "#000000";
+            // const colorInput = document.createElement("input");
+            // colorInput.type = "color";
+            // colorInput.id = "head";
+            // colorInput.name = "head";
+            // colorInput.value = data?.color || "#000000";
 
-            editableOptions.color && container.appendChild(colorInput);
-
+            let colorValue;
+            editableOptions.color && container.appendChild(panel.appendChild(colorPalette({
+                onColorChange: (color) => {
+                    console.log("color", color);
+                    colorValue = color;
+                },
+            })));
             editableOptions.name && container.appendChild(inputName);
+            editableOptions.color && (container.style.flexDirection = "column-reverse");
 
             const modalContent = document.createElement("div");
             modalContent.className = "modal-content";
@@ -2203,18 +2286,18 @@
                 soilClasses.push({
                     id: soilClasses.length + 1,
                     name: inputName.value,
-                    color: colorInput.value,
+                    color: colorValue,
                 });
 
                 if (typeof okCallback === "function") {
-                    okCallback({ name: inputName.value, color: colorInput.value });
+                    okCallback({ name: inputName.value, color: colorValue });
                 }
                 modalContainer.style.display = "none";
                 modalContainer.innerHTML = ""; // Clear the modal content
             };
 
             const cancelButton = document.createElement("div");
-            cancelButton.className = "save-close-button";
+            cancelButton.className = "save-close-button gray-button";
             cancelButton.innerText = "Cancel";
             cancelButton.onclick = () => {
                 if (typeof cancelCallback === "function") {
@@ -2243,6 +2326,55 @@
             modalContainer.style.display = "flex";
         }
 
+        function colorPalette({ onColorChange }) {
+
+            const colors = [
+                ['#000000', '#222222', '#444444', '#666666', '#888888', '#AAAAAA', '#CCCCCC', '#DDDDDD', '#EEEEEE', '#FFFFFF'],
+                ['#FF0000', '#FF4400', '#FF8800', '#FFFF00', '#00FF00', '#00FFFF', '#0088FF', '#0000FF', '#8800FF', '#FF00FF'],
+                ['#FFE7E7', '#FFE7D4', '#FFF4E7', '#FFFFE7', '#E7FFE7', '#E7FFF4', '#E7F4FF', '#E7E7FF', '#F4E7FF', '#FFE7FF'],
+                ['#FFB3B3', '#FFB392', '#FFD4B3', '#FFFFB3', '#B3FFB3', '#B3FFD4', '#B3D4FF', '#B3B3FF', '#D4B3FF', '#FFB3FF'],
+                ['#CC0000', '#CC4400', '#CC8800', '#CCCC00', '#00CC00', '#00CCCC', '#0088CC', '#0000CC', '#8800CC', '#CC00CC'],
+                ['#880000', '#884400', '#888800', '#448800', '#008800', '#008888', '#004488', '#000088', '#660088', '#880088'],
+                ['#660000', '#664400', '#666600', '#446600', '#006600', '#006666', '#004466', '#000066', '#440066', '#660066']
+            ];
+
+            const palette = document.createElement("div");
+            palette.className = "color-palette";
+
+            const input = document.createElement("input");
+            input.style.display = "block";
+            input.type = "color";
+            input.onchange = (e) => {
+                onColorChange && onColorChange(e.target.value);
+            };
+
+            colors.forEach((row) => {
+                const rowDiv = document.createElement("div");
+                rowDiv.className = "color-palette-row";
+                row.forEach((color) => {
+                    const colorDiv = document.createElement("div");
+                    colorDiv.className = "color-palette-item";
+                    colorDiv.style.backgroundColor = color;
+                    colorDiv.onclick = () => {
+                        input.value = color;
+                        onColorChange && onColorChange(color);
+                    };
+                    rowDiv.appendChild(colorDiv);
+                });
+                palette.appendChild(rowDiv);
+            });
+
+            const custom = document.createElement("div");
+            custom.textContent = "Custom";
+
+
+            custom.appendChild(input);
+
+            palette.appendChild(custom);
+
+            return palette;
+        }
+
         function generateUID() {
             return (
                 "_" +
@@ -2250,6 +2382,8 @@
                 Math.random().toString(36).substr(2, 5)
             );
         }
+
+
     </script>
 </body>
 
