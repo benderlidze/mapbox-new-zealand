@@ -491,10 +491,18 @@
             user-select: none;
         }
 
+        .gray-button {
+            background-color: #8d8d8d;
+        }
+
         .flex-center {
             display: flex;
             justify-content: center;
             align-items: center;
+        }
+
+        .flex-gap-10 {
+            gap: 10px;
         }
 
         .overlay-container {
@@ -893,6 +901,27 @@
                     });
                 });
 
+
+
+                const saveData = document.createElement("div");
+                saveData.classList = "save-close-button";
+                saveData.textContent = "Save";
+                saveData.addEventListener("click", () => {
+                    console.log('Save',);
+                });
+                const cancelData = document.createElement("div");
+                cancelData.classList = "save-close-button";
+                cancelData.textContent = "Cancel";
+                cancelData.addEventListener("click", () => {
+                    console.log('Cancel',);
+                });
+                const saveCancelDivContainer = document.createElement("div");
+                saveCancelDivContainer.classList = "flex-center flex-gap-10";
+                saveCancelDivContainer.appendChild(saveData);
+                saveCancelDivContainer.appendChild(cancelData);
+
+
+                infoDiv.appendChild(saveCancelDivContainer);
                 infoDiv.appendChild(selectCustomColor);
             }
         });
@@ -1532,6 +1561,9 @@
             buildActionButton({
                 name: "Map your Land Units",
                 callback: () => {
+
+                    console.log('Map your Land Units');
+
                     lockProperty.turnOn();
                     property.turnOn();
                     drawControllVisible(true);
@@ -1540,19 +1572,23 @@
                     Draw.changeMode("draw_polygon");
                     currentMode = "draw_polygon";
 
-                    saveAndLoadDiv.style.display = "flex";
+                    //  saveAndLoadDiv.style.display = "flex";
 
                     editMode(true);
 
                     landUnits.turnOn();//!!
 
                     const appPolygonsData = localStorage.getItem("appPolygonsData");
-                    const json = JSON.parse(appPolygonsData)
-                    if (json && json.features.length > 0) {
-                        const polygonsArray = json
-                        console.log("polygonsArray", polygonsArray);
-                        Draw.add(polygonsArray);
-                        updatePolygonInfoTab();
+                    if (appPolygonsData && appPolygonsData.length > 0) {
+                        const json = JSON.parse(appPolygonsData)
+                        if (json && json.features.length > 0) {
+                            const polygonsArray = json
+                            console.log("polygonsArray", polygonsArray);
+                            Draw.add(polygonsArray);
+                            updatePolygonInfoTab();
+                        } else {
+                            console.warn("No polygons found in local storage")
+                        }
                     } else {
                         console.warn("No polygons found in local storage")
                     }
