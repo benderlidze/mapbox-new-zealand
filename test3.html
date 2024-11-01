@@ -1,38 +1,17 @@
+<!-- begin snippet: js hide: false console: true babel: null babelPresetReact: false babelPresetTS: false -->
+
+<!-- language: lang-html -->
+
 <!DOCTYPE html>
 <html>
 
 <head>
     <meta charset="utf-8">
-    <title>Add a new layer to a slot</title>
+    <title>Add a custom style layer</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
-    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
-
-    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js'></script>
-    <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css'
-        type='text/css' />
-
-    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-
-
-    <!-- Include Proj4js library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js"></script>
-    <script src="js/nztm2000.js"></script>
-
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.js"></script>
     <style>
-        .mapboxgl-ctrl-top-center {
-            top: 0;
-            left: 50%;
-            position: absolute;
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        .mapboxgl-ctrl-top-center .mapboxgl-ctrl {
-            margin: 10px 0 0 10px;
-        }
-
-
         body {
             margin: 0;
             padding: 0;
@@ -44,368 +23,158 @@
             bottom: 0;
             width: 100%;
         }
-
-        #panel {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 5px
-        }
-
-        #legend {
-            background-color: white;
-            border-radius: 10px;
-            padding: 10px;
-            width: 200px;
-        }
-
-        #property {
-            background-color: white;
-            border-radius: 10px;
-            padding: 10px;
-        }
-
-        #filters {
-            background-color: white;
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            border-radius: 20px;
-            z-index: 10;
-            padding: 10px;
-        }
-
-        .switcher-div {
-            display: flex;
-            align-items: center;
-            margin: 5px;
-        }
-
-        .switcher-div>div {
-            margin-left: 5px;
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 35px;
-            height: 15px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            -webkit-transition: 0.4s;
-            transition: 0.4s;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 11px;
-            width: 11px;
-            left: 3px;
-            bottom: 2px;
-            background-color: white;
-            -webkit-transition: 0.4s;
-            transition: 0.4s;
-        }
-
-        input:checked+.slider {
-            background-color: #2196f3;
-        }
-
-        input:focus+.slider {
-            box-shadow: 0 0 1px #2196f3;
-        }
-
-        input:checked+.slider:before {
-            -webkit-transform: translateX(18px);
-            -ms-transform: translateX(18px);
-            transform: translateX(18px);
-        }
-
-        /* Rounded sliders */
-        .slider.round {
-            border-radius: 34px;
-        }
-
-        .slider.round:before {
-            border-radius: 50%;
-        }
-
-        #loading {
-            background-color: white;
-            position: absolute;
-            border-radius: 10px;
-            z-index: 10;
-            padding: 20px;
-            font-size: 20px;
-
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        #property-controls {
-            display: flex;
-            flex-direction: row;
-            gap: 10px;
-        }
-
-        #close-controls {
-            background-color: white;
-            padding: 10px;
-            border-radius: 10px;
-            display: none;
-        }
-
-        #actions {
-            display: flex;
-            flex-direction: row;
-            background-color: white;
-            border-radius: 10px;
-            padding: 10px;
-            gap: 40px
-        }
-
-        #info {
-            position: absolute;
-            background-color: white;
-            border-radius: 10px;
-            padding: 10px;
-            z-index: 1000;
-
-            /* center screen */
-            top: 60px;
-            left: 50%;
-            transform: translate(-50%, 0);
-        }
-
-        #list {
-            display: flex;
-            gap: 2px;
-            flex-direction: column;
-
-            background-color: white;
-            padding: 10px;
-            border-radius: 10px;
-        }
-
-        .main {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        .top {
-            flex: 1;
-            position: relative;
-        }
-
-        .bottom {
-            height: 50px;
-            background-color: white;
-            margin: 10px;
-
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            align-content: center;
-            align-items: center;
-
-        }
-
-        .action-button {
-            border: 1px solid #969696;
-            padding: 5px 10px;
-            border-radius: 5px;
-
-        }
-
-        .center-bottom {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translate(-50%, 0);
-        }
-
-        #geocoder {
-            position: absolute;
-            top: 20px;
-            z-index: 1000;
-            left: 50%;
-            transform: translate(-50%, 0);
-        }
-
-        .flex-nowrap {
-            display: flex;
-            flex-direction: row;
-            gap: 10px;
-            flex-wrap: nowrap;
-        }
-
-        #farm-features-list {
-            background-color: white;
-            padding: 10px;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            width: 230px;
-        }
-
-
-
-        #modal-container {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal {
-            background: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
-            width: fit-content;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-        }
-
-        .modal-title {
-            font-size: 20px;
-            margin: 0;
-        }
-
-        .modal-content {
-            font-size: 16px;
-        }
-
-        .modal-buttons {
-            display: flex;
-            justify-content: space-between;
-            gap: 5px;
-        }
-
-        .modal-button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
-            flex: 1;
-        }
-
-        .modal-button:hover {
-            background: #0056b3;
-        }
-
-        .modal-button.cancel {
-            background: #6c757d;
-        }
-
-        .modal-button.cancel:hover {
-            background: #5a6268;
-        }
     </style>
 </head>
 
 <body>
-    <!-- Load the `mapbox-gl-geocoder` plugin. -->
-
     <div id="map"></div>
-
-
     <script>
-
-
-
         mapboxgl.accessToken = 'pk.eyJ1Ijoib3VyZmFybXMiLCJhIjoiY2x3YWRhbW9nMGRsNjJxcHFwdW81emVhNSJ9.forvlRpP1nOZekrRDqBKjQ';
         const map = new mapboxgl.Map({
             container: 'map',
-            // You can add layers to the predetermined slots within the Standard style basemap.
-            // style: 'mapbox://styles/mapbox/standard',
-            style: 'mapbox://styles/mapbox/light-v9',
-            center: { lng: 174.95943864902665, lat: -37.70716520232802 }, //
-            zoom: 9,
-            projection: "mercator",
-
-            // transformRequest: (url, resourceType) => {
-            //     console.log('url', url);
-            //     console.log('resourceType', resourceType);
-            //     if (resourceType === 'Tile' && url.includes('https://portals-maps-aws-2.scinfo.org.nz/')) {
-            //         return {
-            //             url: `https://portals-maps-aws-2.scinfo.org.nz/mapcache/portals/wmts/?layer=aspect_slope&style=default&tilematrixset=NZTM2000&Service=WMTS&Request=GetTile&Version=1.0.0&Format=jpeng&TileMatrix=6&TileCol=36&TileRow=49`
-            //         }
-            //     }
-            // }
-
+            zoom: 3,
+            center: [7.5, 58],
+            // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+            style: 'mapbox://styles/mapbox/light-v11',
+            antialias: true, // create the gl context with MSAA antialiasing, so custom layers are antialiased
+            projection: 'mercator'
         });
 
-
-
-        // 2. Add the ArcGIS REST service layer as a raster layer
-        map.on('load', function () {
-            map.addSource('arcgis-raster', {
-                'type': 'raster',
-                'tiles': [
-                    'https://maps.waikatoregion.govt.nz/arcgis/rest/services/WRCMAPS/WaterClassification/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&dpi=96&format=png32&transparent=true&layers=show:6&f=image'
-                ],
-                'tileSize': 256,
-                'attribution': '© Waikato Regional Council'
-            });
-
-            map.addLayer({
-                'id': 'arcgis-raster-layer',
-                'type': 'raster',
-                'source': 'arcgis-raster',
-                'paint': {}
-            });
+        // define vertices of the triangle to be rendered in the custom style layer
+        const helsinki = mapboxgl.MercatorCoordinate.fromLngLat({
+            lng: 25.004,
+            lat: 60.239
+        });
+        const berlin = mapboxgl.MercatorCoordinate.fromLngLat({
+            lng: 13.403,
+            lat: 52.562
+        });
+        const kyiv = mapboxgl.MercatorCoordinate.fromLngLat({
+            lng: 30.498,
+            lat: 50.541
+        });
+        const moscow = mapboxgl.MercatorCoordinate.fromLngLat({
+            lng: 37.6173,
+            lat: 55.7558
         });
 
+        const vertex_buffer = new Float32Array([
+            helsinki.x,
+            helsinki.y,
+            berlin.x,
+            berlin.y,
+            kyiv.x,
+            kyiv.y,
 
+            kyiv.x,
+            kyiv.y,
+            helsinki.x,
+            helsinki.y,
+            moscow.x,
+            moscow.y
+        ])
 
+        const color_buffer = new Float32Array([
+            0.0, 1.0, 0.0, 1.0,
+            0.0, 1.0, 0.0, 1.0,
+            0.0, 1.0, 0.0, 1.0,
+            0.0, 0.0, 1.0, 1.0,
+            0.0, 0.0, 1.0, 1.0,
+            0.0, 0.0, 1.0, 1.0,
+        ])
 
+        const highlightLayer = {
+            id: 'highlight',
+            type: 'custom',
 
+            onAdd: function (map, gl) {
+                // Simpler vertex shader
+                const vertexSource = `
+                attribute vec2 a_pos;
+                uniform mat4 u_matrix;
+                void main() {
+                    gl_Position = u_matrix * vec4(a_pos, 0.0, 1.0);
+                }`;
 
+                // Simpler fragment shader
+                const fragmentSource = `
+                precision mediump float;
+                void main() {
+                    gl_FragColor = vec4(0.0, 0.0, 1.0, 0.5); // Blue with 50% opacity
+                }`;
+
+                // Create vertex shader
+                const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+                gl.shaderSource(vertexShader, vertexSource);
+                gl.compileShader(vertexShader);
+
+                // Check vertex shader compilation
+                if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+                    console.error('Vertex shader compilation error:', gl.getShaderInfoLog(vertexShader));
+                    return;
+                }
+
+                // Create fragment shader
+                const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+                gl.shaderSource(fragmentShader, fragmentSource);
+                gl.compileShader(fragmentShader);
+
+                // Check fragment shader compilation
+                if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+                    console.error('Fragment shader compilation error:', gl.getShaderInfoLog(fragmentShader));
+                    return;
+                }
+
+                // Create program and link shaders
+                this.program = gl.createProgram();
+                gl.attachShader(this.program, vertexShader);
+                gl.attachShader(this.program, fragmentShader);
+                gl.linkProgram(this.program);
+
+                // Check program linking
+                if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
+                    console.error('Program linking error:', gl.getProgramInfoLog(this.program));
+                    return;
+                }
+
+                // Get attribute and uniform locations
+                this.aPos = gl.getAttribLocation(this.program, 'a_pos');
+                this.u_matrix = gl.getUniformLocation(this.program, 'u_matrix');
+
+                // Create and initialize vertex buffer
+                this.vertexBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, vertex_buffer, gl.STATIC_DRAW);
+            },
+
+            render: function (gl, matrix) {
+                gl.useProgram(this.program);
+
+                // Set the matrix uniform
+                gl.uniformMatrix4fv(this.u_matrix, false, matrix);
+
+                // Bind vertex buffer and set attributes
+                gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+                gl.enableVertexAttribArray(this.aPos);
+                gl.vertexAttribPointer(this.aPos, 2, gl.FLOAT, false, 0, 0);
+
+                // Enable blending
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+                // Draw the triangles
+                gl.drawArrays(gl.TRIANGLES, 0, vertex_buffer.length / 2);
+            }
+        };
+
+        // add the custom style layer to the map
+        map.on('load', () => {
+            map.addLayer(highlightLayer, 'building');
+        });
     </script>
 
 </body>
 
 </html>
+
+<!-- end snippet -->

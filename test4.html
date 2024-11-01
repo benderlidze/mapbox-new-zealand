@@ -1,13 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapbox GL Custom Shader</title>
-    <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
-    <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+    <meta charset="utf-8">
+    <title>Add a new layer to a slot</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+
+    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js'></script>
+    <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css'
+        type='text/css' />
+
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+
+    <!-- Include Proj4js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js"></script>
+    <script src="js/nztm2000.js"></script>
+
     <style>
+        .mapboxgl-ctrl-top-center {
+            top: 0;
+            left: 50%;
+            position: absolute;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .mapboxgl-ctrl-top-center .mapboxgl-ctrl {
+            margin: 10px 0 0 10px;
+        }
+
+
         body {
             margin: 0;
             padding: 0;
@@ -19,139 +44,417 @@
             bottom: 0;
             width: 100%;
         }
+
+        #panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 5px
+        }
+
+        #legend {
+            background-color: white;
+            border-radius: 10px;
+            padding: 10px;
+            width: 200px;
+        }
+
+        #property {
+            background-color: white;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        #filters {
+            background-color: white;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            border-radius: 20px;
+            z-index: 10;
+            padding: 10px;
+        }
+
+        .switcher-div {
+            display: flex;
+            align-items: center;
+            margin: 5px;
+        }
+
+        .switcher-div>div {
+            margin-left: 5px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 35px;
+            height: 15px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: 0.4s;
+            transition: 0.4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 11px;
+            width: 11px;
+            left: 3px;
+            bottom: 2px;
+            background-color: white;
+            -webkit-transition: 0.4s;
+            transition: 0.4s;
+        }
+
+        input:checked+.slider {
+            background-color: #2196f3;
+        }
+
+        input:focus+.slider {
+            box-shadow: 0 0 1px #2196f3;
+        }
+
+        input:checked+.slider:before {
+            -webkit-transform: translateX(18px);
+            -ms-transform: translateX(18px);
+            transform: translateX(18px);
+        }
+
+        /* Rounded sliders */
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+        #loading {
+            background-color: white;
+            position: absolute;
+            border-radius: 10px;
+            z-index: 10;
+            padding: 20px;
+            font-size: 20px;
+
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #property-controls {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+        }
+
+        #close-controls {
+            background-color: white;
+            padding: 10px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        #actions {
+            display: flex;
+            flex-direction: row;
+            background-color: white;
+            border-radius: 10px;
+            padding: 10px;
+            gap: 40px
+        }
+
+        #info {
+            position: absolute;
+            background-color: white;
+            border-radius: 10px;
+            padding: 10px;
+            z-index: 1000;
+
+            /* center screen */
+            top: 60px;
+            left: 50%;
+            transform: translate(-50%, 0);
+        }
+
+        #list {
+            display: flex;
+            gap: 2px;
+            flex-direction: column;
+
+            background-color: white;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .main {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .top {
+            flex: 1;
+            position: relative;
+        }
+
+        .bottom {
+            height: 50px;
+            background-color: white;
+            margin: 10px;
+
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-content: center;
+            align-items: center;
+
+        }
+
+        .action-button {
+            border: 1px solid #969696;
+            padding: 5px 10px;
+            border-radius: 5px;
+
+        }
+
+        .center-bottom {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translate(-50%, 0);
+        }
+
+        #geocoder {
+            position: absolute;
+            top: 20px;
+            z-index: 1000;
+            left: 50%;
+            transform: translate(-50%, 0);
+        }
+
+        .flex-nowrap {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            flex-wrap: nowrap;
+        }
+
+        #farm-features-list {
+            background-color: white;
+            padding: 10px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            width: 230px;
+        }
+
+
+
+        #modal-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: fit-content;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            margin: 0;
+        }
+
+        .modal-content {
+            font-size: 16px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 5px;
+        }
+
+        .modal-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+            flex: 1;
+        }
+
+        .modal-button:hover {
+            background: #0056b3;
+        }
+
+        .modal-button.cancel {
+            background: #6c757d;
+        }
+
+        .modal-button.cancel:hover {
+            background: #5a6268;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Load the `mapbox-gl-geocoder` plugin. -->
+
     <div id="map"></div>
 
-    <script>
-        // Your Mapbox access token
-        mapboxgl.accessToken = 'pk.eyJ1Ijoic2VyaHV6IiwiYSI6ImNseXpvc3RlczJpbnIya3FscDU2aHc5d3EifQ.FHtPjde_lqensSHZxqthgw';
 
-        // Initialize the Mapbox map
+    <script>
+
+
+
+        mapboxgl.accessToken = 'pk.eyJ1Ijoib3VyZmFybXMiLCJhIjoiY2x3YWRhbW9nMGRsNjJxcHFwdW81emVhNSJ9.forvlRpP1nOZekrRDqBKjQ';
+
         const map = new mapboxgl.Map({
-            container: 'map', // container id
-            style: 'mapbox://styles/mapbox/streets-v11', // map style
-            center: [-74.5, 40], // starting position [lng, lat]
-            zoom: 9 // starting zoom
+            container: 'map',
+            style: 'mapbox://styles/mapbox/light-v10',
+            center: [-74.006, 40.7128],
+            zoom: 10
         });
 
-        map.on('load', function () {
-            // Add the custom layer when the map is loaded
-            map.addLayer({
-                id: 'custom-layer',
-                type: 'custom',
-                renderingMode: '2d',
-                onAdd: function (map, gl) {
-                    // Set a neutral background color (white)
-                    gl.clearColor(1.0, 1.0, 1.0, 1.0); // White background
-                    gl.clear(gl.COLOR_BUFFER_BIT);
-
-                    // Compile vertex and fragment shaders
-                    const vertexShaderSource = `
-                        attribute vec2 a_position;
-                        uniform mat4 u_matrix;
-                        void main() {
-                            gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);
+        map.on('load', () => {
+            // Add your source
+            map.addSource('your-data', {
+                type: 'geojson',
+                data: {
+                    "type": "FeatureCollection",
+                    "features": [
+                        {
+                            "type": "Feature",
+                            "properties": {},
+                            "geometry": {
+                                "coordinates": [[
+                                    [-74.03123178777963, 40.760048461137245],
+                                    [-74.03123178777963, 40.70367669079499],
+                                    [-73.97088204475727, 40.70367669079499],
+                                    [-73.97088204475727, 40.760048461137245],
+                                    [-74.03123178777963, 40.760048461137245]
+                                ]],
+                                "type": "Polygon"
+                            }
                         }
-                    `;
-
-                    const fragmentShaderSource = `
-                        precision mediump float;
-                        uniform vec4 u_color;
-                        void main() {
-                            vec4 baseColor = u_color;
-                            baseColor.a = 0.5;  // Ensure opacity is always 0.5
-                            gl_FragColor = baseColor;
-                        }
-                    `;
-
-                    // Helper functions to compile shaders
-                    function compileShader(gl, type, source) {
-                        const shader = gl.createShader(type);
-                        gl.shaderSource(shader, source);
-                        gl.compileShader(shader);
-                        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                            console.error('Shader compilation failed:', gl.getShaderInfoLog(shader));
-                            gl.deleteShader(shader);
-                            return null;
-                        }
-                        return shader;
-                    }
-
-                    const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-                    const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-
-                    // Create and link program
-                    const program = gl.createProgram();
-                    gl.attachShader(program, vertexShader);
-                    gl.attachShader(program, fragmentShader);
-                    gl.linkProgram(program);
-
-                    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-                        console.error('Program linking failed:', gl.getProgramInfoLog(program));
-                        return;
-                    }
-
-                    // Use the program
-                    gl.useProgram(program);
-
-                    // Set up buffer for polygon data
-                    const positionBuffer = gl.createBuffer();
-                    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
-                    // Define polygon vertices in normalized device coordinates (NDC)
-                    const positions = new Float32Array([
-                        // First rectangle (lower left corner)
-                        -0.75, -0.75,  // bottom left
-                        0.0, -0.75,    // bottom right
-                        0.0, 0.0,      // top right
-                        -0.75, 0.0,    // top left
-
-                        // Second rectangle (upper right corner, overlaps first)
-                        -0.25, -0.25,  // bottom left
-                        0.5, -0.25,    // bottom right
-                        0.5, 0.5,      // top right
-                        -0.25, 0.5     // top left
-                    ]);
-
-                    // Fill buffer with polygon vertices
-                    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-
-                    // Set up color uniform
-                    const colorLocation = gl.getUniformLocation(program, 'u_color');
-                    gl.uniform4f(colorLocation, 0.0, 0.5, 1.0, 1.0); // Set color to blue with opacity 0.5
-
-                    // Set up position attribute
-                    const positionLocation = gl.getAttribLocation(program, 'a_position');
-                    gl.enableVertexAttribArray(positionLocation);
-                    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-
-                    // Matrix uniform for transformations
-                    const matrixLocation = gl.getUniformLocation(program, 'u_matrix');
-
-                    // Prepare to draw
-                    this.program = program;
-                    this.matrixLocation = matrixLocation;
-                    this.positionBuffer = positionBuffer;
-                },
-                render: function (gl, matrix) {
-                    // Bind buffer and update matrix uniform
-                    gl.useProgram(this.program);
-                    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-                    gl.uniformMatrix4fv(this.matrixLocation, false, matrix);
-
-                    // Clear the canvas (with the clearColor previously set)
-                    gl.clear(gl.COLOR_BUFFER_BIT);
-
-                    // Draw the polygons (first as triangle fan)
-                    gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);  // First polygon
-                    gl.drawArrays(gl.TRIANGLE_FAN, 4, 4);  // Second polygon
+                    ]
                 }
             });
+
+            map.addLayer({
+                id: 'original-fill-layer',
+                type: 'line',
+                source: 'your-data',
+                paint: {
+                    'line-color': '#0080ff',
+                    'line-opacity': 0.6,
+                    'line-width': 2
+                }
+            });
+
+
+            map.addLayer({
+                'id': 'blur-outline',
+                'type': 'fill',
+                'source': 'your-data',
+                'paint': {
+                    'fill-antialias': true,
+                    'fill-color': '#0080ff',
+                    'fill-opacity': 0.5,
+                    // Add multiple outline layers with decreasing opacity
+                    'fill-translate': [0, 0],
+                    'fill-translate-anchor': 'map'
+                }
+            });
+
+            // Add multiple layers for the blur effect
+            const blurSteps = 15;
+            const maxBlurDistance = 20;
+            const baseOpacity = 0.3;
+
+            for (let i = 0; i < blurSteps; i++) {
+                const distance = (i * maxBlurDistance) / blurSteps;
+                const opacity = baseOpacity * (1 - i / blurSteps);
+
+                map.addLayer({
+                    'id': `blur-outline-${i}`,
+                    'type': 'line',
+                    'source': 'your-data',
+                    'paint': {
+                        'line-color': '#0080ff',
+                        'line-width': 2,
+                        'line-opacity': opacity,
+                        'line-offset': distance
+                    }
+                });
+
+                // Add inner line for symmetrical blur
+                map.addLayer({
+                    'id': `blur-outline-inner-${i}`,
+                    'type': 'line',
+                    'source': 'your-data',
+                    'paint': {
+                        'line-color': '#0080ff',
+                        'line-width': 2,
+                        'line-opacity': opacity,
+                        'line-offset': -distance
+                    }
+                });
+            }
         });
+
+
     </script>
+
 </body>
 
 </html>
